@@ -1,0 +1,30 @@
+import type { Metadata } from "next";
+import { Nunito_Sans } from 'next/font/google'
+import "./globals.css";
+
+// Google Font: Nunito Sans, with variable for Tailwind CSS. Display swap for better performance and user experience.
+const nunitoSans = Nunito_Sans({
+  variable: '--font-nunito-sans',
+  subsets: ["latin"],
+  display: 'swap',
+});
+
+// Metadata for the application, including title and description.
+export const metadata: Metadata = {
+  title: "CrownWynn",
+  description: "Online Casino-Style Games",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+      </body>
+    </html>
+  );
+}
