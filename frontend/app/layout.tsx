@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito_Sans } from 'next/font/google'
 import "./globals.css";
+import { UserProvider } from "@/context/UserContext";
 
 // Google Font: Nunito Sans, with variable for Tailwind CSS. Display swap for better performance and user experience.
 const nunitoSans = Nunito_Sans({
@@ -21,9 +22,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        {children}
+    <html lang="en" className="scroll-smooth">
+      <body className={`${nunitoSans.variable} font-sans antialiased`}>
+        <UserProvider>
+          {children}
+        </UserProvider>
       </body>
     </html>
   );
