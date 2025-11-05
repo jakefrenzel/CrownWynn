@@ -1,0 +1,119 @@
+.header {
+    display: flex;
+    position: relative;
+    justify-content: space-between;
+    align-items: stretch;
+    width: 100vw;
+    height: 60px;
+    background-color: #1a2c38;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    z-index: 999;
+}
+.header_segments {
+    display: flex;
+    position: static;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 33.33%;
+}
+.header_logo_container {
+    display: flex;
+    position: static;
+    justify-content: flex-start;
+    align-items: center;
+    padding-left: 1rem;
+    gap: 1rem;
+}
+.header_logo {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+}
+.logo {
+    font-family: var(--font-nunito-sans), sans-serif;
+    font-weight: 600;
+    font-size: 1.5rem;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+.balance_container {
+    display: flex;
+    position: static;
+    justify-content: center;
+    align-items: center;
+    height: 80%;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+    gap: 0.4rem;
+    background-color: #0f212e;
+    border: solid 1px #0f212e;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+.text {
+    display: flex;
+    position: static;
+    font-family: var(--font-rajdhani), sans-serif;
+    font-weight: 600;
+    font-size: 1.4rem;
+    color: white;
+    letter-spacing: 1px;
+}
+.header_button_container {
+    justify-content: flex-end;
+    padding-right: 0.6rem;
+    gap: 0.6rem;
+}
+.header_button {
+    display: block;
+    position: static;
+    padding: 0.6rem 1rem;
+    font-family: "Poppins", sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: white;
+    background-color: #2b78ca;
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.2s ease;
+}
+.header_button:hover {
+    background-color: #266bb5;
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+.header_button:active {
+    background-color: #266bb5;
+    transform: scale(1);
+}
+.login_button {
+    display: block;
+    position: static;
+    padding: 0.6rem 1rem;
+    font-family: "Poppins", sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: white;
+    background-color: #1a2c38;
+    border: none;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+.login_button:hover {
+    background-color: #1a2c38;
+    transform: scale(1.04);
+}
+.login_button.active {
+    background-color: #2b78ca;
+    transform: scale(1);
+}
+.crown_image {
+    display: flex;
+    width: 26px;
+    height: 26px;
+    pointer-events: none;
+    margin-bottom: 4px;
+}

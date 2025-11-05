@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Nunito_Sans } from 'next/font/google'
+import { Rajdhani } from "next/font/google";
 import "./globals.css";
 import { UserProvider } from "@/context/UserContext";
 
@@ -7,6 +8,13 @@ import { UserProvider } from "@/context/UserContext";
 const nunitoSans = Nunito_Sans({
   variable: '--font-nunito-sans',
   subsets: ["latin"],
+  display: 'swap',
+});
+
+const rajdhani = Rajdhani({
+  variable: "--font-rajdhani",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: 'swap',
 });
 
@@ -23,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${nunitoSans.variable} font-sans antialiased`}>
+      <body className={`${nunitoSans.variable} ${rajdhani.variable} font-sans antialiased`}>
         <UserProvider>
           {children}
         </UserProvider>
