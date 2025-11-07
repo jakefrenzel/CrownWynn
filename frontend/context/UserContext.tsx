@@ -1,31 +1,48 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import axiosInstance from "@/lib/axiosInstance";
 
-// Define what data and functions your context holds
 type UserContextType = {
   user: string | null;
   setUser: (user: string | null) => void;
   balance: number;
-  setBalance: (balance: number) => void;
+  setBalance: React.Dispatch<React.SetStateAction<number>>;
+  loading: boolean;
 };
 
-// Create the context
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Provider component (wraps the entire app)
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<string | null>(null);
   const [balance, setBalance] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        //const userRes = await axiosInstance.get("/api/user/");
+        const balanceRes = await axiosInstance.get("/api/user/balance/");
+        //setUser(userRes.data.username);
+        setBalance(balanceRes.data.balance);
+      } catch (err) {
+        console.warn("Error loading user:", err);
+        //setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
+  }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser, balance, setBalance }}>
+    <UserContext.Provider value={{ user, setUser, balance, setBalance, loading }}>
       {children}
     </UserContext.Provider>
   );
 }
 
-// Custom hook to access the context easily
 export function useUser() {
   const context = useContext(UserContext);
   if (!context) {
