@@ -37,7 +37,7 @@ export default function LoginPage() {
       setError("Invalid username or password");
     } else {
       // redirect or show success
-      window.location.href = "/dashboard";
+      window.location.href = "/";
     }
   };
 
