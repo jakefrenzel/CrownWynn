@@ -1,11 +1,13 @@
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework import status
+from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views import View
+
+from api.serializers import ProfileSerializer
 
 # Create your views here.
 class TestView(View):
@@ -28,3 +30,11 @@ def register_user(request):
     user.save()
 
     return Response({"message": "User created successfully!"}, status=status.HTTP_201_CREATED)
+
+class UserBalanceView(generics.RetrieveUpdateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        # Returns the current user's profile
+        return self.request.user.profile
