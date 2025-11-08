@@ -5,32 +5,27 @@ import styles from './page.module.css';
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-import axiosInstance from '@/lib/axiosInstance';
 import { useUser } from '@/context/UserContext';
-import axios from 'axios';
+import axiosInstance from '@/lib/axiosInstance';
 
 export default function Home() {
 
+  const { user, loading } = useUser();
+  const router = useRouter();
+
   const { balance, setBalance } = useUser();
 
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    const token = localStorage.getItem("access");
-
-    if (!token) {
-      router.replace("/login"); // redirect before render
-    } else {
-      setLoading(false);
+    if (!loading && !user) {
+      router.replace("/login"); // only redirect if not logged in
     }
-  }, [router]);
+  }, [loading, user, router]);
 
   if (loading) {
     // 🌀 Show a loader instead of flashing page content
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center h-screen">Loading content...</div>;
   }
+  if (!user) return <div className="flex items-center justify-center h-screen">Loading user...</div>;;
 
  const addBalance = async (): Promise<void> => {
   const amount = 100;

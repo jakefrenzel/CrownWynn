@@ -1,24 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axiosInstance";
 
 export async function login(username: string, password: string) {
   try {
-    const res = await axios.post("http://localhost:8000/api/token/", {
-      username,
-      password,
-    });
+    // ✅ Hit your cookie-based login endpoint
+    await axiosInstance.post("/api/login/", { username, password });
 
-    const { access, refresh } = res.data;
-
-    // ⚠️ This is fine for dev, but use HttpOnly cookies for production.
-    localStorage.setItem("access", access);
-    localStorage.setItem("refresh", refresh);
+    // ✅ Immediately fetch CSRF cookie after successful login
+    await axiosInstance.get("/api/csrf/");
+    console.log("CSRF cookie set!");
 
     return true;
-  } catch (err) {
-    console.error("Login failed:", err);
+  } catch (error) {
+    console.error("Login failed:", error);
     return false;
   }
 }
@@ -29,14 +25,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent full page reload
+    e.preventDefault();
     setError("");
 
     const success = await login(username, password);
     if (!success) {
       setError("Invalid username or password");
     } else {
-      // redirect or show success
+      // ✅ Redirect or show success
       window.location.href = "/";
     }
   };

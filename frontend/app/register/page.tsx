@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axiosInstance";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -10,13 +10,13 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:8000/api/register/", {
+      const res = await axiosInstance.post("/api/register/", {
         username,
         password,
       });
       setMessage("✅ Registered successfully! You can now log in.");
     } catch (error: any) {
-      setMessage("❌ " + (error.response?.data?.error || "Something went wrong."));
+  setMessage("❌ " + (error.response?.data?.error || "Something went wrong."));
     }
   };
 

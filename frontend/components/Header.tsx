@@ -10,28 +10,23 @@ export default function Header() {
 
     useEffect(() => {
         const fetchBalance = async () => {
+            if (!user) {
+                setLoading(false);
+                return;
+            }
             try {
-                const token = localStorage.getItem("access");
-                if (!token) {
-                    console.warn("No token found — user not logged in.");
-                    return;
-                }
-
-                const res = await api.get("/api/user/balance/", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                setBalance(res.data.balance); // ✅ updates context instead of local state
-
-            } catch (error) {
-                console.error("Error fetching balance:", error);
+                const res = await api.get("/api/user/balance/");
+                setBalance(res.data.balance);
+            } catch (err) {
+                // Not logged in or request failed; show placeholder
+                console.warn("Balance fetch failed", err);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchBalance();
-    }, [setBalance]);
+    }, [user, setBalance]);
 
     return (
         <header className={styles.header}>
@@ -61,14 +56,8 @@ export default function Header() {
             </div>
 
             <div className={`${styles.header_segments} ${styles.header_button_container}`}>
-                {!user ? (
-                    <>
-                        <button className={styles.login_button}>Login</button>
-                        <button className={styles.header_button}>Register</button>
-                    </>
-                ) : (
-                    <div className={styles.text}>Welcome, {user}</div>
-                )}
+                <button className={styles.login_button}>Login</button>
+                <button className={styles.header_button}>Register</button>
             </div>
         </header>
     );
