@@ -1,14 +1,26 @@
 from django.urls import path
-from api.views import register_user
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from api.views import TestView, UserBalanceView
+from api.views import (
+    TestView,
+    RegisterUserView,
+    CookieTokenObtainPairView,
+    CookieTokenRefreshView,
+    UserBalanceView,
+    CSRFTokenView,
+    CurrentUserView,
+)
 
 urlpatterns = [
+    # Just a test endpoint to verify API is working
     path('', TestView.as_view(), name='test-view'),
-    path("register/", register_user, name="register"),
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-     path("user/balance/", UserBalanceView.as_view(), name="user-balance"),
+    # Auth endpoints
+    path("register/", RegisterUserView.as_view(), name="register"),
+    path("login/", CookieTokenObtainPairView.as_view(), name="cookie-login"),
+    path("refresh/", CookieTokenRefreshView.as_view(), name="cookie-refresh"),
+    path("csrf/", CSRFTokenView.as_view(), name="csrf-token"),
+
+    # Protected endpoints
+    path("user/me/", CurrentUserView.as_view(), name="current-user"),
+    path("user/balance/", UserBalanceView.as_view(), name="user-balance"),
 ]

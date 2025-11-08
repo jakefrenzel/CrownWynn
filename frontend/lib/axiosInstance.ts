@@ -4,63 +4,55 @@ const baseURL = "http://localhost:8000";
 
 const axiosInstance = axios.create({
   baseURL,
+  withCredentials: true, // crucial for cookie-based auth
 });
 
-axiosInstance.interceptors.request.use(request => {
-  const access = localStorage.getItem('access');
-  if (access) {
-    request.headers['Authorization'] = `Bearer ${access}`;
-  }
-  return request;
-}, error => {
-  return Promise.reject(error);
-});
+// CSRF helper for unsafe methods (POST, PATCH, DELETE)
+function getCSRFToken(): string | undefined {
+  const match = document.cookie.match(/csrftoken=([^;]+)/);
+  return match ? match[1] : undefined;
+}
 
+// Add CSRF token to modifying requests
+axiosInstance.interceptors.request.use(
+  (request) => {
+    const csrfToken = getCSRFToken();
+    if (csrfToken && ["post", "put", "patch", "delete"].includes(request.method ?? "")) {
+      request.headers["X-CSRFToken"] = csrfToken;
+    }
+    return request;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Handle 401 responses, but skip redirect on public pages
 axiosInstance.interceptors.response.use(
-  response => response, // Directly return successful responses.
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config as any; // widen to allow _retry flag
+    const status = error.response?.status;
 
-  async error => {
+    // Prevent infinite loop: never retry refresh or login endpoints
+    const isAuthEndpoint = originalRequest.url?.includes("/api/refresh/") || 
+                           originalRequest.url?.includes("/api/login/");
 
-    const originalRequest = error.config;
-
-    if (error.response.status === 401 && !originalRequest._retry) {
-
-      originalRequest._retry = true; // Mark the request as retried to avoid infinite loops.
-
+    // Attempt silent refresh on 401 (expired access token)
+    if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+      originalRequest._retry = true;
       try {
-        const refreshToken = localStorage.getItem('refreshToken'); // Retrieve the stored refresh token.
-
-        // Make a request to your auth server to refresh the token.
-        const response = await axios.post('http://localhost:8000/api/token/refresh/', {
-          refreshToken,
-        });
-
-        const { accessToken, refreshToken: newRefreshToken } = response.data;
-
-        // Store the new access and refresh tokens.
-        localStorage.setItem('access', accessToken);
-        localStorage.setItem('refresh', newRefreshToken);
-
-        // Update the authorization header with the new access token.
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-
-        return axiosInstance(originalRequest); // Retry the original request with the new access token.
-
-      } catch (refreshError) {
-
-        // Handle refresh token errors by clearing stored tokens and redirecting to the login page.
-        console.error('Token refresh failed:', refreshError);
-        localStorage.removeItem('access');
-        localStorage.removeItem('refresh');
-        
-        if (!window.location.pathname.startsWith("/login")) {
-          window.location.href = "/login";
+        await axiosInstance.post("/api/refresh/");
+        // Retry original request after obtaining new access cookie
+        return axiosInstance(originalRequest);
+      } catch (refreshErr) {
+        console.warn("Token refresh failed", refreshErr);
+        // Redirect to login if not already on an auth page
+        const publicPaths = ["/login", "/register"]; 
+        if (typeof window !== "undefined" && !publicPaths.includes(window.location.pathname)) {
+          window.location.replace("/login");
         }
-
-        return Promise.reject(refreshError);
       }
     }
-    return Promise.reject(error); // For all other errors, return the error as is.
+    return Promise.reject(error);
   }
 );
 
