@@ -2,11 +2,16 @@ import styles from '@/css/Header.module.css';
 import Image from "next/image";
 import { useEffect, useState } from 'react';
 import api from "@/lib/axiosInstance";
+import { useUI } from "@/context/UIContext";
 import { useUser } from "@/context/UserContext";
+import Link from "next/link";
 
 export default function Header() {
     const { user, balance, setBalance } = useUser(); // ✅ get balance from context
     const [loading, setLoading] = useState(true);    // ✅ local loading only
+    const { toggleMenu } = useUI();
+
+
 
     useEffect(() => {
         const fetchBalance = async () => {
@@ -32,9 +37,11 @@ export default function Header() {
         <header className={styles.header}>
             <div className={`${styles.header_segments} ${styles.header_logo_container}`}>
                 <div className={styles.header_logo}>
-                    <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="#e3e3e3">
-                        <path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z"/>
-                    </svg>
+                    <button onClick={toggleMenu} aria-label="Open menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="#e3e3e3">
+                            <path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z"/>
+                        </svg>
+                    </button>
                     <div className={styles.logo}>test</div>
                 </div>
             </div>
@@ -56,8 +63,8 @@ export default function Header() {
             </div>
 
             <div className={`${styles.header_segments} ${styles.header_button_container}`}>
-                <button className={styles.login_button}>Login</button>
-                <button className={styles.header_button}>Register</button>
+                <Link href="/login" className={styles.login_button}>Login</Link>
+                <Link href="/register" className={styles.header_button}>Register</Link>
             </div>
         </header>
     );
