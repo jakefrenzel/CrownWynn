@@ -1,6 +1,7 @@
 "use client";
 
 import Header from '@/components/Header';
+import Sidebar from '@/components/Sidebar';
 import styles from './page.module.css';
 
 import { useEffect, useState } from "react";
@@ -54,6 +55,7 @@ const updateBalance = async (newBalance: number): Promise<void> => {
   return (
     <main className={styles.general}>
       <Header />
+      <Sidebar />
       <button onClick={() => addBalance()}>Click me!</button>
     </main>
   );

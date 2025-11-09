@@ -3,6 +3,8 @@ import { Nunito_Sans } from 'next/font/google'
 import { Rajdhani } from "next/font/google";
 import "./globals.css";
 import { UserProvider } from "@/context/UserContext";
+import { UIProvider } from "@/context/UIContext";
+import Sidebar from "@/components/Sidebar";
 
 // Google Font: Nunito Sans, with variable for Tailwind CSS. Display swap for better performance and user experience.
 const nunitoSans = Nunito_Sans({
@@ -33,7 +35,10 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${nunitoSans.variable} ${rajdhani.variable} font-sans antialiased`}>
         <UserProvider>
-          {children}
+          <UIProvider>
+            <Sidebar />
+            {children}
+          </UIProvider>
         </UserProvider>
       </body>
     </html>
