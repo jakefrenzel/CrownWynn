@@ -1,22 +1,45 @@
 @import "tailwindcss";
 
+/* These styles apply across all pages (global) */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+    /* Colors */
+    --bg-color: rgb(255, 255, 255);
+    --text-color: rgb(0, 0, 0);
+    --accent-color: #18CDF2;
+    --hover-color: rgba(24, 205, 242, 0.8);
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+    --base-clr: #324B50;
+    --line-clr: #42434a;
+    --hover-clr: rgba(149, 176, 182, 0.3);
+    --text-clr: #e6e6ef;
+    --accent-clr: #81cad9;
+    --secondary-text-clr: #b0b3c1;
+    --Tertiary-Color: #95b0b6; /* Light Greyish/Blue */
+    --white: white;
+    --text-clr-dark: black;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    --calendar-text: #333333;
+
+    /* Font */
+    --ff: 'Figtree', sans-serif;
+    --h1: bold 4rem/1em var(--ff);
+    --h2: bold 3rem/1.2em var(--ff);
+    --h3: bold 2.25rem/1.2em var(--ff);
+    --h4: bold 1.5rem/1.6em var(--ff);
+    --big: 1.25rem/1.6em var(--ff);
+    --p: 1rem/1.6em var(--ff);
+    --small: 0.75rem/2em var(--ff);
+
+    /* Spacing */
+    font-size: 16px;
+    --margin-xxs: .25rem;
+    --margin-xs: .5rem;
+    --margin-s: .75rem;
+    --margin-m: 1rem;
+    --margin-l: 1.25rem;
+    --margin-xl: 1.75rem;
+    --margin-xxl: 2.5rem;
 }
 
 * {
@@ -24,10 +47,14 @@
     padding: 0;
     user-select: none;
 }
+html, body {
+  height: 100vh;
+  width: 100%;
+}
 html {
     font-size: 16px;
 }
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-color);
+  color: var(--text-color);
 }

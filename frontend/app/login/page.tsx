@@ -3,6 +3,9 @@
 import { useState } from "react";
 import axiosInstance from "@/lib/axiosInstance";
 
+import Image from "next/image";
+import styles from "@/css/Login.module.css";
+
 export async function login(username: string, password: string) {
   try {
     // ✅ Hit your cookie-based login endpoint
@@ -23,52 +26,79 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
+    setLoading(true);
 
-    const success = await login(username, password);
-    if (!success) {
+    const loginSuccess = await login(username, password);
+    setLoading(false);
+    
+    if (!loginSuccess) {
       setError("Invalid username or password");
     } else {
-      // ✅ Redirect or show success
+      setSuccess("Login successful! Redirecting...");
+      // ✅ Brief delay to show success message before redirect
       window.location.href = "/";
+      
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <h1 className="text-2xl font-bold mb-4">Login</h1>
+    <main className={styles.container}>
+      <div className={styles.login_container}>
 
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-2 w-64 bg-white/10 p-4 rounded-lg shadow"
-      >
-        <input
-          type="text"
-          placeholder="Username"
-          className="border p-2 rounded"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="border p-2 rounded"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+        {/* CrownWynn logo */}
+        <Image
+            src="/assets/crown.png"
+            alt="Crown currency icon"
+            className={styles.crown_image}
+            width={32}
+            height={32}
+            priority
         />
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {/* Header and details */}
+        <h4 className={styles.login_header}>Welcome back</h4> 
+        <p className={styles.details}>Please enter your details to sign in</p>
 
-        <button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded mt-2"
-        >
-          Login
-        </button>
-      </form>
-    </div>
+        <hr className={styles.break} /> 
+
+        {/* Login form */}
+        <form className={styles.login_form} onSubmit={handleSubmit}>
+            <label className={styles.label} htmlFor="email">Email</label>
+            <input 
+              className={styles.input} 
+              type="text" 
+              name="username" 
+              placeholder="Username..." 
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required 
+            />
+            <label className={`${styles.label} ${styles.spacing}`} htmlFor="password">Password</label>
+            <input 
+              className={styles.input} 
+              type="password" 
+              name="password" 
+              placeholder="Password..."
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required />
+            
+            {loading && <div className={styles.loading_message}>Signing in...</div>}
+            {error && <div className={styles.error_message}>{error}</div>}
+            {success && <div className={styles.success_message}>{success}</div>}
+
+            <button className={styles.submit} type="submit" disabled={loading}>
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
+        </form>
+      </div>
+    </main>
   );
 }
