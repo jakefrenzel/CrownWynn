@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const baseURL = "http://localhost:8000";
+// Use different URLs based on environment
+const baseURL = process.env.NODE_ENV === 'production' 
+  ? "/api"  // In production, use relative path (handled by Nginx)
+  : "http://localhost:8000";  // In development, direct to backend
 
 const axiosInstance = axios.create({
   baseURL,
