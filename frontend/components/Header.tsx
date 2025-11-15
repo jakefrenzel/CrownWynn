@@ -3,17 +3,26 @@ import Image from "next/image";
 import { useEffect, useState } from 'react';
 import api from "@/lib/axiosInstance";
 import { useUI } from "@/context/UIContext";
-import { useUser } from "@/context/UserContext";
+import { useUser, formatBalanceDisplay } from "@/context/UserContext";
 import Link from "next/link";
 
 export default function Header() {
-    const { user, balance, setBalance } = useUser(); // ✅ get balance from context
+    const { user, balance, setBalance, logout } = useUser(); // ✅ get logout from context
     const [loading, setLoading] = useState(true);    // ✅ local loading only
     const { toggleMenu } = useUI();
+
+    const handleLogout = async () => {
+        await logout();
+    };
 
 
 
     useEffect(() => {
+        const formatBalance = (balance: number | string): number => {
+            const num = typeof balance === 'string' ? parseFloat(balance) : balance;
+            return Math.round((num || 0) * 100) / 100;
+        };
+
         const fetchBalance = async () => {
             if (!user) {
                 setLoading(false);
@@ -21,7 +30,7 @@ export default function Header() {
             }
             try {
                 const res = await api.get("/api/user/balance/");
-                setBalance(res.data.balance);
+                setBalance(formatBalance(res.data.balance));
             } catch (err) {
                 // Not logged in or request failed; show placeholder
                 console.warn("Balance fetch failed", err);
@@ -49,7 +58,7 @@ export default function Header() {
             <div className={styles.header_segments}>
                 <div className={styles.balance_container}>
                     <div className={styles.text}>
-                        {loading ? "loading..." : balance ?? "—"}
+                        {loading ? "loading..." : formatBalanceDisplay(balance ?? 0)}
                     </div>
                     <Image
                         src="/assets/crown.png"
@@ -63,8 +72,16 @@ export default function Header() {
             </div>
 
             <div className={`${styles.header_segments} ${styles.header_button_container}`}>
-                <Link href="/login" className={styles.login_button}>Login</Link>
-                <Link href="/register" className={styles.header_button}>Register</Link>
+                {user ? (
+                    <button onClick={handleLogout} className={styles.header_button}>
+                        Logout
+                    </button>
+                ) : (
+                    <>
+                        <Link href="/login" className={styles.login_button}>Login</Link>
+                        <Link href="/register" className={styles.header_button}>Register</Link>
+                    </>
+                )}
             </div>
         </header>
     );

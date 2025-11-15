@@ -7,13 +7,13 @@ import Image from 'next/image';
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from '@/context/UserContext';
+import { useUser, formatBalanceDisplay } from '@/context/UserContext';
 import { useUI } from '@/context/UIContext';
 import axiosInstance from '@/lib/axiosInstance';
 
 export default function Home() {
 
-  const { user, loading } = useUser();
+  const { user, loading, welcomeBonusClaimed, claimWelcomeBonus } = useUser();
   const router = useRouter();
   const { firstTimeVisible, hideFirstTime, scrollOffset, setScrollOffset } = useUI();
   const firstTimeSectionRef = useRef<HTMLElement>(null);
@@ -27,6 +27,25 @@ export default function Home() {
     }
   }, [loading, user, router]);
 
+  // Auto-apply scroll offset for users who already claimed welcome bonus
+  useEffect(() => {
+    if (!loading && user && welcomeBonusClaimed && firstTimeSectionRef.current && scrollableRef.current) {
+      // Calculate the section's total height including margins
+      const style = getComputedStyle(firstTimeSectionRef.current);
+      const marginTop = parseFloat(style.marginTop);
+      const marginBottom = parseFloat(style.marginBottom);
+      const sectionHeight = firstTimeSectionRef.current.offsetHeight;
+      
+      const totalHeight = sectionHeight + marginTop + marginBottom;
+      
+      // Apply the offset to remove the gap
+      setScrollOffset(totalHeight);
+      hideFirstTime(); // Ensure the section is hidden
+      
+      console.log(`Auto-applied scroll offset for existing user: ${totalHeight}px`);
+    }
+  }, [loading, user, welcomeBonusClaimed, hideFirstTime, setScrollOffset]);
+
   if (loading) {
     // 🌀 Show a loader instead of flashing page content
     return <div className="flex items-center justify-center h-screen">Loading content...</div>;
@@ -37,7 +56,7 @@ export default function Home() {
   const amount = 100;
 
   setBalance((prev: number) => {
-    const newBalance = Math.round((prev + amount) * 100) / 100;
+    const newBalance = Math.round((prev + amount) * 100) / 100; // Ensure 2 decimal places
     updateBalance(newBalance);
     return newBalance;
   });
@@ -54,8 +73,11 @@ const updateBalance = async (newBalance: number): Promise<void> => {
   }
 };
 
-const handleThanks = () => {
-    if (firstTimeSectionRef.current && scrollableRef.current) {
+const handleThanks = async () => {
+    // First claim the welcome bonus
+    const success = await claimWelcomeBonus();
+    
+    if (success && firstTimeSectionRef.current && scrollableRef.current) {
       // Get computed styles and dimensions
       const style = getComputedStyle(firstTimeSectionRef.current);
       const marginTop = parseFloat(style.marginTop);
@@ -71,7 +93,9 @@ const handleThanks = () => {
       // Apply the negative margin to eliminate the gap
       setScrollOffset(totalHeight);
       
-      console.log(`First-time section hidden, offset applied: ${totalHeight}px`);
+      console.log(`Welcome bonus claimed! Section hidden, offset applied: ${totalHeight}px`);
+    } else if (!success) {
+      console.log("Welcome bonus already claimed or failed to claim");
     }
   };
 
@@ -99,7 +123,7 @@ const handleThanks = () => {
         >
           <section 
             ref={firstTimeSectionRef}
-            className={`${styles.firstTimeSection} ${!firstTimeVisible ? styles.hidden : ''}`} 
+            className={`${styles.firstTimeSection} ${(!firstTimeVisible || welcomeBonusClaimed) ? styles.hidden : ''}`} 
             id="first-time-section"
           >
             <div className={styles.firstTimeHeading}>
@@ -134,22 +158,6 @@ const handleThanks = () => {
             </div>
             <div className={styles.attentionGetterSubtext}>
               All the fun, none of the risk—get started now!
-            </div>
-            <div className={styles.attentionGetterButtons}>
-              <button
-                className={styles.createAccountButton}
-                id="create-account-button"
-                onClick={handleCreateAccount}
-              >
-                Create Account!
-              </button>
-              <button
-                className={styles.createAccountButton}
-                id="guest-button"
-                onClick={handleGuest}
-              >
-                Continue as Guest
-              </button>
             </div>
           </section>
 
