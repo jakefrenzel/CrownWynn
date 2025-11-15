@@ -9,6 +9,8 @@ from django.views import View
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from decimal import Decimal
+from django.db import transaction
 
 # Auth & CSRF Protection
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
@@ -109,7 +111,10 @@ class CurrentUserView(APIView):
         profile = getattr(user, "profile", None)
         return Response({
             "username": user.username,
-            "profile": {"balance": profile.balance if profile else 0},
+            "profile": {
+                "balance": profile.balance if profile else 0,
+                "welcome_bonus_claimed": profile.welcome_bonus_claimed if profile else False,
+            },
         })
     
 class UserBalanceView(generics.RetrieveUpdateAPIView):
@@ -119,3 +124,68 @@ class UserBalanceView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         # Returns the current user's profile
         return self.request.user.profile
+
+class ClaimWelcomeBonusView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        profile = request.user.profile
+        
+        # Check if bonus already claimed
+        if profile.welcome_bonus_claimed:
+            return Response(
+                {"error": "Welcome bonus has already been claimed"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Use transaction to ensure atomicity
+        with transaction.atomic():
+            # Add the welcome bonus to balance
+            welcome_amount = Decimal('1000.00')
+            profile.balance += welcome_amount
+            profile.welcome_bonus_claimed = True
+            profile.save()
+        
+        return Response({
+            "message": "Welcome bonus claimed successfully!",
+            "bonus_amount": welcome_amount,
+            "new_balance": profile.balance,
+            "welcome_bonus_claimed": profile.welcome_bonus_claimed
+        }, status=status.HTTP_200_OK)
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            # Get the refresh token from cookies
+            refresh_token = request.COOKIES.get('refresh_token')
+            
+            # If we have a refresh token, blacklist it
+            if refresh_token:
+                try:
+                    token = RefreshToken(refresh_token)
+                    token.blacklist()
+                except Exception as e:
+                    # Token might already be invalid, but continue with logout
+                    print(f"Token blacklist error: {e}")
+            
+            # Create response
+            response = Response({
+                "message": "Logged out successfully"
+            }, status=status.HTTP_200_OK)
+            
+            # Clear cookies
+            response.delete_cookie('access_token', path='/')
+            response.delete_cookie('refresh_token', path='/')
+            
+            return response
+            
+        except Exception as e:
+            # Even if something goes wrong, clear cookies
+            response = Response({
+                "message": "Logged out successfully"
+            }, status=status.HTTP_200_OK)
+            response.delete_cookie('access_token', path='/')
+            response.delete_cookie('refresh_token', path='/')
+            return response

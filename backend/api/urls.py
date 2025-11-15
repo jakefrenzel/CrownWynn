@@ -8,6 +8,8 @@ from api.views import (
     UserBalanceView,
     CSRFTokenView,
     CurrentUserView,
+    ClaimWelcomeBonusView,
+    LogoutView,
 )
 
 urlpatterns = [
@@ -23,4 +25,6 @@ urlpatterns = [
     # Protected endpoints
     path("user/me/", CurrentUserView.as_view(), name="current-user"),
     path("user/balance/", UserBalanceView.as_view(), name="user-balance"),
+    path("user/claim-welcome-bonus/", ClaimWelcomeBonusView.as_view(), name="claim-welcome-bonus"),
+    path("logout/", LogoutView.as_view(), name="logout"),
 ]
