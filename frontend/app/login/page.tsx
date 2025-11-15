@@ -56,7 +56,7 @@ export default function LoginPage() {
         <Image
             src="/assets/crown.png"
             alt="Crown currency icon"
-            className={styles.crown_image}
+            className={styles.gemstoneImage}
             width={32}
             height={32}
             priority
