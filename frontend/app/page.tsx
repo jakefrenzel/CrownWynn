@@ -166,15 +166,11 @@ const handleThanks = async () => {
             <div className={styles.attentionGetterSubtext}>Can you beat the odds?</div>
 
             <div className={styles.gameSelection}>
-              <div className={styles.gameButton} id="game-keno">
-                Keno
+              <div className={styles.gameButton} id="game-mines">
+                Mines
               </div>
-              <div className={styles.gameButton} id="game-crash">
-                Crash
-              </div>
-              <div className={styles.gameButton} id="game-plinko">
-                Plinko
-              </div>
+              <div className={`${styles.gameButton} ${styles.comingSoon}`}>Coming</div>
+              <div className={`${styles.gameButton} ${styles.comingSoon}`}>Coming</div>
               <div className={`${styles.gameButton} ${styles.comingSoon}`}>Coming</div>
               <div className={`${styles.gameButton} ${styles.comingSoon}`}>Coming</div>
             </div>
@@ -190,17 +186,17 @@ const handleThanks = async () => {
 
           <section className={styles.informationSection}>
             <h3 className={`${styles.informationHeading} ${styles.informationFirst}`}>
-              What is Keno Gambino?
+              What is CrownWynn?
             </h3>
             <p className={styles.informationText}>
-              Keno Gambino is your ultimate destination for no-risk, casino-style games,
+              CrownWynn is your ultimate destination for no-risk, casino-style games,
               offering a variety of exciting experiences. Whether you're into the fast-paced
               action of Plinko, the adrenaline-pumping crashes of Crash, or the classic
-              number-drawing thrill of Keno, Keno Gambino has something for everyone. The
+              number-drawing thrill of Keno, CrownWynn has something for everyone. The
               best part? You can enjoy it all without the risk—no real money, just pure fun!
             </p>
 
-            <h4 className={styles.informationHeading}>What Can You Play on Keno Gambino?</h4>
+            <h4 className={styles.informationHeading}>What Can You Play on CrownWynn?</h4>
             <p className={styles.informationText}>
               Plinko: Drop the ball and watch it bounce through pegs, hoping it lands in the
               high-scoring slots! Plinko is all about chance and timing, making every drop an
@@ -216,15 +212,15 @@ const handleThanks = async () => {
               how many you can match. The more numbers you hit, the bigger your virtual payout!
             </p>
 
-            <h4 className={styles.informationHeading}>Why Choose Keno Gambino?</h4>
+            <h4 className={styles.informationHeading}>Why Choose CrownWynn?</h4>
             <p className={styles.informationText}>
-              No-Risk Fun: Keno Gambino is designed for players who love casino-style games
+              No-Risk Fun: CrownWynn is designed for players who love casino-style games
               without the stress of real money gambling. You can play all you want and
               experience the thrill without any financial pressure.
             </p>
             <p className={styles.informationText}>
               Multiple Games, One Platform: With Plinko, Crash, Keno, and more games on the
-              way, Keno Gambino offers a diverse gaming experience in one place. You’ll never
+              way, CrownWynn offers a diverse gaming experience in one place. You’ll never
               run out of ways to have fun.
             </p>
             <p className={styles.informationText}>
@@ -235,11 +231,11 @@ const handleThanks = async () => {
 
             <h4 className={styles.informationHeading}>Always Something New</h4>
             <p className={styles.informationText}>
-              At Keno Gambino, we’re constantly working to bring you new games and features.
+              At CrownWynn, we’re constantly working to bring you new games and features.
               Whether you’re chasing the next big win in Plinko or holding your breath in
               Crash, you’ll always find fresh and exciting ways to play.
             </p>
-          </section>
+          </section> 
         </div>
       </div>
     </div>
