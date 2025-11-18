@@ -36,7 +36,7 @@
 .label {
     margin-bottom: 0.25rem;
     font-weight: 500;
-    margin-top: var(--margin-m);
+    margin-top: var(--margin-xs);
 }
 
 .input {
@@ -67,7 +67,7 @@
 .break {
     width: 90%;
     border: 1px solid #e1e1e1;
-    margin-bottom: var(--margin-s);
+    margin-bottom: var(--margin-xs);
 }
 
 .error_message {
@@ -186,7 +186,7 @@
     justify-content: space-between;
     align-items: baseline;
     margin-bottom: 0.25rem;
-    margin-top: var(--margin-m);
+    margin-top: var(--margin-xs);
 }
 
 .character_counter {

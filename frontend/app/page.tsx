@@ -166,7 +166,12 @@ const handleThanks = async () => {
             <div className={styles.attentionGetterSubtext}>Can you beat the odds?</div>
 
             <div className={styles.gameSelection}>
-              <div className={styles.gameButton} id="game-mines">
+              <div 
+                className={styles.gameButton} 
+                id="game-mines"
+                onClick={() => router.push('/mines')}
+                style={{ cursor: 'pointer' }}
+              >
                 Mines
               </div>
               <div className={`${styles.gameButton} ${styles.comingSoon}`}>Coming</div>
