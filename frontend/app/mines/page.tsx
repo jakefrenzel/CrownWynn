@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from '@/context/UserContext';
+import styles from '@/css/Mines.module.css';
 
 export default function MinesPage() {
   const { user, loading } = useUser();
@@ -41,32 +42,30 @@ export default function MinesPage() {
       <Header />
       <Sidebar />
       
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        height: 'calc(100vh - 60px)', // Account for header height
-        backgroundColor: '#1a2c38',
-        color: '#fff',
-        fontFamily: 'Poppins, sans-serif'
-      }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-          Welcome to Mines, {user.username}!
-        </h1>
-        
-        <p style={{ fontSize: '1.2rem', textAlign: 'center', maxWidth: '600px' }}>
-          This is a protected page that only authenticated users can access.
-          Your authentication is working correctly!
-        </p>
-        
-        <div style={{ 
-          marginTop: '2rem', 
-          padding: '1rem 2rem', 
-          backgroundColor: '#2b78ca', 
-          borderRadius: '6px' 
-        }}>
-          <p>🎮 Mines game content goes here...</p>
+      <div className={styles.section}>
+        {/* Betting Section - Left Side */}
+        <div className={styles.betting_section}>
+          <h3>Place Your Bet</h3>
+          
+          <div className={styles.input_group}>
+            <label htmlFor="bet-amount">Bet Amount</label>
+            <input
+              type="number"
+              id="bet-amount"
+              placeholder="Enter bet amount..."
+              min="0"
+              step="0.01"
+            />
+          </div>
+
+          <button className={styles.play_button}>
+            Play
+          </button>
+        </div>
+
+        {/* Game Section - Right Side */}
+        <div className={styles.game_section}>
+          Game area - coming soon
         </div>
       </div>
     </div>

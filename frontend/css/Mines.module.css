@@ -1,0 +1,92 @@
+.section {
+    display: flex;
+    height: calc(100vh - 60px);
+    width: 100vw;
+    padding: var(--margin-xl);
+    gap: var(--margin-m);
+    background-color: #1a2c38;
+}
+
+.betting_section {
+    flex: 0 0 20%; /* Takes up 1/5 of the width */
+    background-color: white;
+    border-radius: var(--margin-m);
+    padding: var(--margin-m);
+    display: flex;
+    flex-direction: column;
+    gap: var(--margin-m);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.game_section {
+    flex: 1; /* Takes up remaining space */
+    background-color: white;
+    border-radius: var(--margin-m);
+    padding: var(--margin-m);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 1.2rem;
+}
+
+.betting_section h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.input_group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.input_group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+}
+
+.input_group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: var(--margin-xs);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.input_group input:focus {
+    border-color: rgba(0, 0, 0, 0.5);
+}
+
+.play_button {
+    width: 100%;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    border: none;
+    border-radius: var(--margin-xs);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: auto; /* Push to bottom */
+}
+
+.play_button:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.play_button:active {
+    background-color: rgba(0, 0, 0, 1);
+}
+
+.play_button:disabled {
+    background-color: rgba(0, 0, 0, 0.4);
+    cursor: not-allowed;
+}
