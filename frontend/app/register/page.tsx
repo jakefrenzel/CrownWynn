@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axiosInstance from "@/lib/axiosInstance";
 import Link from "next/link";
 
@@ -15,11 +15,71 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [usernameError, setUsernameError] = useState("");
+  const [usernameTouched, setUsernameTouched] = useState(false);
+
+  // Username validation: 3-20 characters, alphanumeric and underscores only, must start with a letter
+  const USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{2,19}$/;
+
+  const validateUsername = (username: string): string | null => {
+    if (username.length === 0) {
+      return null; // Don't show error for empty field
+    }
+    if (username.length < 3) {
+      return "Username must be at least 3 characters long";
+    }
+    if (username.length > 20) {
+      return "Username must be no more than 20 characters long";
+    }
+    if (!/^[a-zA-Z]/.test(username)) {
+      return "Username must start with a letter";
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return "Username can only contain letters, numbers, and underscores";
+    }
+    if (!USERNAME_REGEX.test(username)) {
+      return "Invalid username format";
+    }
+    return null;
+  };
+
+  // Debounced validation effect
+  useEffect(() => {
+    if (!usernameTouched) return;
+    
+    const timer = setTimeout(() => {
+      const error = validateUsername(username);
+      setUsernameError(error || "");
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [username, usernameTouched]);
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUsername(value);
+    if (!usernameTouched) setUsernameTouched(true);
+    // Clear error immediately while typing
+    if (usernameError) setUsernameError("");
+  };
+
+  const handleUsernameBlur = () => {
+    setUsernameTouched(true);
+    const error = validateUsername(username);
+    setUsernameError(error || "");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    // Validate username
+    const usernameError = validateUsername(username);
+    if (usernameError) {
+      setError(usernameError);
+      return;
+    }
 
     // Check if passwords match
     if (password !== confirmPassword) {
@@ -67,14 +127,22 @@ export default function RegisterPage() {
 
         {/* Login form */}
         <form className={styles.login_form} onSubmit={handleSubmit}>
-            <label className={styles.label} htmlFor="username">Username</label>
+            <div className={styles.label_with_counter}>
+              <label className={styles.label} htmlFor="username">Username</label>
+              <span className={styles.character_counter}>{username.length}/20</span>
+            </div>
             <input 
               className={styles.input} 
               type="text" 
               name="username" 
               placeholder="Username..." 
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={handleUsernameChange}
+              onBlur={handleUsernameBlur}
+              pattern="[a-zA-Z][a-zA-Z0-9_]{2,19}"
+              title="Username must be 3-20 characters, start with a letter, and contain only letters, numbers, and underscores"
+              minLength={3}
+              maxLength={20}
               required 
             />
             <label className={`${styles.label} ${styles.spacing}`} htmlFor="password">Password</label>
@@ -147,9 +215,13 @@ export default function RegisterPage() {
               </button>
             </div>
             
-            {loading && <div className={styles.loading_message}>Creating account...</div>}
-            {error && <div className={styles.error_message}>{error}</div>}
-            {success && <div className={styles.success_message}>{success}</div>}
+            {/* Reserved space for messages to prevent layout shift */}
+            <div className={styles.message_container}>
+              {usernameError && <div className={styles.error_message}>{usernameError}</div>}
+              {loading && <div className={styles.loading_message}>Creating account...</div>}
+              {error && <div className={styles.error_message}>{error}</div>}
+              {success && <div className={styles.success_message}>{success}</div>}
+            </div>
             
             <button className={styles.submit} type="submit" disabled={loading}>
               {loading ? "Creating Account..." : "Register"}
