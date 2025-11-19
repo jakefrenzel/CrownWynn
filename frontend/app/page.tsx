@@ -99,16 +99,6 @@ const handleThanks = async () => {
     }
   };
 
-  const handleCreateAccount = () => {
-    // replace with real navigation / modal opening
-    console.log("Create Account clicked");
-  };
-
-  const handleGuest = () => {
-    // replace with continue-as-guest flow
-    console.log("Continue as Guest clicked");
-};
-
   return (
     <div>
       <Header />

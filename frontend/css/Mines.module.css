@@ -1,92 +1,205 @@
 .section {
     display: flex;
-    height: calc(100vh - 60px);
-    width: 100vw;
-    padding: var(--margin-xl);
-    gap: var(--margin-m);
-    background-color: #1a2c38;
-}
-
-.betting_section {
-    flex: 0 0 20%; /* Takes up 1/5 of the width */
-    background-color: white;
-    border-radius: var(--margin-m);
-    padding: var(--margin-m);
-    display: flex;
     flex-direction: column;
-    gap: var(--margin-m);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.game_section {
-    flex: 1; /* Takes up remaining space */
-    background-color: white;
-    border-radius: var(--margin-m);
-    padding: var(--margin-m);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
     justify-content: center;
-    color: #999;
-    font-size: 1.2rem;
+    align-items: center;
+    background-color: #1a2c38;
+    width: 100vw;
+    height: calc(100vh - 60px);
+    overflow: hidden;
 }
 
-.betting_section h3 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #333;
+.game_container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: stretch;
+    width: 80vw;
+    height: 70vh;
 }
 
-.input_group {
+.bet_container {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    align-items: flex-start;
+    padding: 0 5px;
+    width: 20%;
+    max-width: 240px;
+    background-color: #213743;
+    border: solid 10px #213743;
+    border-radius: 6px 0 0 6px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.input_group label {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: #555;
+.label_container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    height: 30px;
 }
 
-.input_group input {
+.label {
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: #b1bad3;
+}
+
+.input_row {
+    display: flex;
+    gap: 0;
     width: 100%;
-    padding: 0.75rem;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: var(--margin-xs);
-    font-size: 1rem;
-    outline: none;
+    border: 2px solid #2f4553;
+    border-radius: 5px;
     transition: border-color 0.2s ease;
 }
 
-.input_group input:focus {
-    border-color: rgba(0, 0, 0, 0.5);
+.input_row:hover {
+    border-color: #3d5a6d;
 }
 
-.play_button {
-    width: 100%;
-    padding: 1rem;
-    background-color: rgba(0, 0, 0, 0.9);
-    color: white;
+.input_container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    height: 40px;
+    flex: 1;
+    background-color: #0f212e;
     border: none;
-    border-radius: var(--margin-xs);
+    border-radius: 5px 0 0 5px;
+}
+
+.quick_bet_button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    font-family: "Poppins", sans-serif;
+    font-weight: 500;
     font-size: 1rem;
-    font-weight: 600;
+    color: #fff;
+    background-color: #2f4553;
+    border: none;
+    border-radius: 0;
     cursor: pointer;
     transition: background-color 0.2s ease;
-    margin-top: auto; /* Push to bottom */
 }
 
-.play_button:hover {
-    background-color: rgba(0, 0, 0, 0.8);
+.quick_bet_button:last-child {
+    border-radius: 0 3px 3px 0;
 }
 
-.play_button:active {
-    background-color: rgba(0, 0, 0, 1);
+.quick_bet_button:hover {
+    background-color: #3d5a6d;
 }
 
-.play_button:disabled {
-    background-color: rgba(0, 0, 0, 0.4);
-    cursor: not-allowed;
+.quick_bet_button:active {
+    background-color: #253d4d;
+}
+
+.bet_input_field {
+    height: 100%;
+    width: 80%;
+    padding: 0 8px;
+    background-color: transparent;
+    border: none;
+    outline: none;
+    border-radius: 5px;
+    font-family: "Poppins", sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+    color: #fff;
+    box-shadow: none;
+}
+
+.bet_input_field:hover,
+.bet_input_field:focus {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.bet_input_field::placeholder {
+    color: #4a5a68;
+}
+
+/* Remove number input arrows */
+.bet_input_field::-webkit-outer-spin-button,
+.bet_input_field::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.bet_input_field[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.input_gemstone_image {
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+    user-select: none;
+}
+
+.bet_section_button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 9px 14px;
+    margin-top: 10px;
+    font-family: "Poppins", sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+    color: #fff;
+    width: 100%;
+    height: 40px;
+    background-color: #2f4553;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.bet_section_button:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.bet_section_button:active {
+    transform: scale(0.99);
+}
+
+.game_label {
+    margin-top: 30px;
+    margin-bottom: 10px;
+}
+
+.play_button_green {
+    background-color: #00e701;
+    color: black;
+    font-weight: 600;
+    padding: 14px 15px;
+    height: 50px;
+}
+
+.play_button_green:hover {
+    background-color: #00c501;
+}
+
+.mines_container {
+    display: flex;
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+    background-color: #0f212e;
+    border-radius: 0 6px 6px 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.placeholder_text {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #b1bad3;
 }
