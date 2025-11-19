@@ -10,6 +10,12 @@ from api.views import (
     CurrentUserView,
     ClaimWelcomeBonusView,
     LogoutView,
+    StartMinesGameView,
+    RevealTileView,
+    CashoutView,
+    RerollSeedView,
+    GameHistoryView,
+    ActiveGameView,
 )
 
 urlpatterns = [
@@ -27,4 +33,12 @@ urlpatterns = [
     path("user/balance/", UserBalanceView.as_view(), name="user-balance"),
     path("user/claim-welcome-bonus/", ClaimWelcomeBonusView.as_view(), name="claim-welcome-bonus"),
     path("logout/", LogoutView.as_view(), name="logout"),
+
+    # Mines game endpoints
+    path("mines/start/", StartMinesGameView.as_view(), name="mines-start"),
+    path("mines/reveal/", RevealTileView.as_view(), name="mines-reveal"),
+    path("mines/cashout/", CashoutView.as_view(), name="mines-cashout"),
+    path("mines/reroll-seed/", RerollSeedView.as_view(), name="mines-reroll-seed"),
+    path("mines/history/", GameHistoryView.as_view(), name="mines-history"),
+    path("mines/active/", ActiveGameView.as_view(), name="mines-active"),
 ]
