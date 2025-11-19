@@ -12,6 +12,13 @@ export default function MinesPage() {
   const { user, loading } = useUser();
   const router = useRouter();
   const [betAmount, setBetAmount] = useState<string>('0.00');
+  const [minesCount, setMinesCount] = useState<number>(3);
+  const [isGameActive, setIsGameActive] = useState<boolean>(false);
+  const [multiplier, setMultiplier] = useState<number>(1.00);
+  const [netGain, setNetGain] = useState<string>('0.00');
+  
+  // Calculate crowns: 25 total tiles - mines
+  const crownsCount = 25 - minesCount;
 
   const handleHalfBet = () => {
     const current = parseFloat(betAmount) || 0;
@@ -88,16 +95,55 @@ export default function MinesPage() {
               </button>
             </div>
             <div className={styles.label_container}>
-              <div className={`${styles.label} ${styles.game_label}`}>Game</div>
+              <div className={`${styles.label} ${styles.game_label}`}>Mines</div>
             </div>
-            <button className={styles.bet_section_button}>Auto Pick</button>
-            <button className={styles.bet_section_button}>Clear Table</button>
-            <button className={`${styles.bet_section_button} ${styles.play_button_green}`}>
-              Play
+            <select 
+              className={styles.mines_select}
+              value={minesCount}
+              onChange={(e) => setMinesCount(Number(e.target.value))}
+            >
+              {Array.from({ length: 24 }, (_, i) => i + 1).map((num) => (
+                <option key={num} value={num}>{num}</option>
+              ))}
+            </select>
+            <div className={styles.label_container}>
+              <div className={`${styles.label} ${styles.game_label}`}>Crowns</div>
+            </div>
+            <div className={styles.crowns_display}>
+              {crownsCount}
+            </div>
+            <button 
+              className={`${styles.bet_section_button} ${styles.play_button_green}`}
+              onClick={() => setIsGameActive(!isGameActive)}
+            >
+              {isGameActive ? 'Cashout' : 'Play'}
             </button>
+            <button 
+              className={`${styles.bet_section_button} ${!isGameActive ? styles.disabled : ''}`}
+              disabled={!isGameActive}
+            >
+              Auto Pick
+            </button>
+            <div className={styles.label_container}>
+              <div className={`${styles.label} ${styles.game_label}`}>
+                Total Net Gain ({multiplier.toFixed(2)}x)
+              </div>
+            </div>
+            <div className={styles.crowns_display}>
+              {netGain}
+            </div>
           </div>
           <div className={styles.mines_container}>
-            <div className={styles.placeholder_text}>Game area - coming soon</div>
+            <div className={styles.grid_container}>
+              {Array.from({ length: 25 }, (_, i) => (
+                <button
+                  key={i}
+                  className={styles.grid_tile}
+                  disabled={!isGameActive}
+                >
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>

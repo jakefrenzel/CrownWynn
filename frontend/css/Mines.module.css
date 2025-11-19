@@ -27,7 +27,7 @@
     background-color: #213743;
     border: solid 10px #213743;
     border-radius: 6px 0 0 6px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .label_container {
@@ -35,13 +35,18 @@
     justify-content: flex-start;
     align-items: center;
     height: 30px;
+    margin-top: var(--margin-xs);
 }
 
 .label {
-    font-family: "Poppins", sans-serif;
-    font-weight: 600;
+    font-family: var(--font-nunito-sans), sans-serif;
+    font-weight: 700;
     font-size: 13px;
     color: #b1bad3;
+}
+
+.label_container:first-of-type {
+    margin-top: 0;
 }
 
 .input_row {
@@ -74,8 +79,8 @@
     align-items: center;
     width: 40px;
     height: 40px;
-    font-family: "Poppins", sans-serif;
-    font-weight: 500;
+    font-family: var(--font-nunito-sans), sans-serif;
+    font-weight: 600;
     font-size: 1rem;
     color: #fff;
     background-color: #2f4553;
@@ -105,8 +110,8 @@
     border: none;
     outline: none;
     border-radius: 5px;
-    font-family: "Poppins", sans-serif;
-    font-weight: 500;
+    font-family: var(--font-nunito-sans), sans-serif;
+    font-weight: 600;
     font-size: 1rem;
     color: #fff;
     box-shadow: none;
@@ -141,14 +146,66 @@
     user-select: none;
 }
 
+.mines_select {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    font-family: var(--font-nunito-sans), sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #fff;
+    background-color: #2f4553;
+    border: 2px solid #2f4553;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    padding-right: 36px;
+}
+
+.mines_select:hover {
+    border-color: #3d5a6d;
+}
+
+.mines_select:focus {
+    border-color: #3d5a6d;
+}
+
+.mines_select option {
+    background-color: #2f4553;
+    color: #fff;
+    padding: 8px;
+}
+
+.crowns_display {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    font-family: var(--font-nunito-sans), sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #fff;
+    background-color: #2f4553;
+    border: 2px solid #2f4553;
+    border-radius: 5px;
+}
+
 .bet_section_button {
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 9px 14px;
     margin-top: 10px;
-    font-family: "Poppins", sans-serif;
-    font-weight: 500;
+    font-family: var(--font-nunito-sans), sans-serif;
+    font-weight: 600;
     font-size: 1rem;
     color: #fff;
     width: 100%;
@@ -156,35 +213,40 @@
     background-color: #2f4553;
     border: none;
     border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     cursor: pointer;
-    transition: transform 0.1s ease;
+    transition: background-color 0.2s ease;
 }
 
 .bet_section_button:hover {
-    transform: scale(1.02);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    background-color: #3d5a6d;
 }
 
 .bet_section_button:active {
-    transform: scale(0.99);
+    background-color: #253d4d;
 }
 
-.game_label {
-    margin-top: 30px;
-    margin-bottom: 10px;
+.bet_section_button.disabled {
+    background-color: #253d4d;
+    color: #6b7c8c;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.bet_section_button.disabled:hover {
+    background-color: #253d4d;
 }
 
 .play_button_green {
-    background-color: #00e701;
-    color: black;
+    background-color: #2b78ca;
+    color: #fff;
     font-weight: 600;
     padding: 14px 15px;
     height: 50px;
 }
 
 .play_button_green:hover {
-    background-color: #00c501;
+    background-color: #1e5fa3;
 }
 
 .mines_container {
@@ -194,12 +256,41 @@
     align-items: center;
     background-color: #0f212e;
     border-radius: 0 6px 6px 0;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
 }
 
-.placeholder_text {
-    font-family: "Poppins", sans-serif;
-    font-size: 1.2rem;
-    font-weight: 400;
-    color: #b1bad3;
+.grid_container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 10px;
+    width: 90%;
+    max-width: 600px;
+    aspect-ratio: 1;
+}
+
+.grid_tile {
+    background-color: #2f4553;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.grid_tile:hover:not(:disabled) {
+    background-color: #3d5a6d;
+    transform: scale(1.05);
+}
+
+.grid_tile:active:not(:disabled) {
+    background-color: #253d4d;
+    transform: scale(0.98);
+}
+
+.grid_tile:disabled {
+    background-color: #253d4d;
+    cursor: not-allowed;
+    opacity: 0.5;
 }
