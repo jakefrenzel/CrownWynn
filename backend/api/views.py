@@ -249,7 +249,8 @@ class StartMinesGameView(APIView):
             # Deduct bet from balance
             with transaction.atomic():
                 profile = request.user.profile
-                profile.balance -= bet_amount
+                from decimal import Decimal
+                profile.balance -= Decimal(str(bet_amount))
                 profile.save()
                 
                 # Generate seeds
@@ -423,11 +424,12 @@ class CashoutView(APIView):
             
             # Calculate payout and update balance
             with transaction.atomic():
+                from decimal import Decimal
                 payout_amount = float(game.bet_amount) * float(game.current_multiplier)
                 net_profit = payout_amount - float(game.bet_amount)
                 
                 profile = request.user.profile
-                profile.balance += payout_amount
+                profile.balance += Decimal(str(payout_amount))
                 profile.save()
                 
                 game.status = 'won'
