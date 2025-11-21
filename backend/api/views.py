@@ -251,6 +251,10 @@ class StartMinesGameView(APIView):
                 profile = request.user.profile
                 from decimal import Decimal
                 profile.balance -= Decimal(str(bet_amount))
+                
+                # Get current nonce and increment it
+                current_nonce = profile.mines_nonce
+                profile.mines_nonce += 1
                 profile.save()
                 
                 # Generate seeds
@@ -260,11 +264,11 @@ class StartMinesGameView(APIView):
                 if not client_seed:
                     client_seed = generate_client_seed()
                 
-                # Generate mine positions
+                # Generate mine positions using the current nonce
                 mine_positions = generate_mine_positions(
                     server_seed,
                     client_seed,
-                    0,  # Nonce starts at 0
+                    current_nonce,
                     mines_count
                 )
                 
@@ -276,7 +280,7 @@ class StartMinesGameView(APIView):
                     server_seed=server_seed,
                     server_seed_hash=server_seed_hash,
                     client_seed=client_seed,
-                    nonce=0,
+                    nonce=current_nonce,
                     mine_positions=mine_positions,
                     revealed_tiles=[],
                     current_multiplier=1.00,
