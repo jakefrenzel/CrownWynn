@@ -14,6 +14,7 @@ from api.views import (
     RevealTileView,
     CashoutView,
     RerollSeedView,
+    GetSeedInfoView,
     GameHistoryView,
     ActiveGameView,
 )
@@ -39,6 +40,7 @@ urlpatterns = [
     path("mines/reveal/", RevealTileView.as_view(), name="mines-reveal"),
     path("mines/cashout/", CashoutView.as_view(), name="mines-cashout"),
     path("mines/reroll-seed/", RerollSeedView.as_view(), name="mines-reroll-seed"),
+    path("mines/seed-info/", GetSeedInfoView.as_view(), name="mines-seed-info"),
     path("mines/history/", GameHistoryView.as_view(), name="mines-history"),
     path("mines/active/", ActiveGameView.as_view(), name="mines-active"),
 ]

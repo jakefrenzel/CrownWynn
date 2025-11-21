@@ -252,17 +252,26 @@ class StartMinesGameView(APIView):
                 from decimal import Decimal
                 profile.balance -= Decimal(str(bet_amount))
                 
-                # Get current nonce and increment it
+                # Get current nonce and increment it (always increments)
                 current_nonce = profile.mines_nonce
                 profile.mines_nonce += 1
-                profile.save()
+                
+                # Increment games played on current seed
+                profile.seed_games_played += 1
                 
                 # Generate seeds
                 server_seed = generate_server_seed()
                 server_seed_hash = hash_seed(server_seed)
                 
+                # Use provided client_seed, or use profile's current seed, or generate new one
                 if not client_seed:
-                    client_seed = generate_client_seed()
+                    if profile.current_client_seed:
+                        client_seed = profile.current_client_seed
+                    else:
+                        client_seed = generate_client_seed()
+                        profile.current_client_seed = client_seed
+                
+                profile.save()
                 
                 # Generate mine positions using the current nonce
                 mine_positions = generate_mine_positions(
@@ -510,12 +519,40 @@ class RerollSeedView(APIView):
                     "error": "Cannot reroll seed while a game is active"
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Generate new client seed
+            # Generate new client seed and reset seed games counter
             new_client_seed = generate_client_seed()
+            profile = request.user.profile
+            profile.current_client_seed = new_client_seed
+            profile.seed_games_played = 0  # Reset games played on this seed
+            profile.save()
             
             return Response({
                 "client_seed": new_client_seed,
+                "seed_games_played": profile.seed_games_played,
                 "message": "New client seed generated. It will be used for your next game."
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GetSeedInfoView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            profile = request.user.profile
+            
+            # If no client seed exists, generate one
+            if not profile.current_client_seed:
+                profile.current_client_seed = generate_client_seed()
+                profile.save()
+            
+            return Response({
+                "client_seed": profile.current_client_seed,
+                "seed_games_played": profile.seed_games_played
             }, status=status.HTTP_200_OK)
             
         except Exception as e:

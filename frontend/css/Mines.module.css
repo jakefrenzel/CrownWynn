@@ -709,6 +709,50 @@
     background-color: #1e5fa3;
 }
 
+.current_seed_section {
+    margin-bottom: 24px;
+}
+
+.section_title {
+    font-family: var(--font-nunito-sans), sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.reroll_button {
+    width: 100%;
+    padding: 12px;
+    background-color: #2b78ca;
+    color: #fff;
+    font-family: var(--font-nunito-sans), sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 12px;
+}
+
+.reroll_button:hover {
+    background-color: #1e5fa3;
+}
+
+.reroll_button:disabled {
+    background-color: #2f4553;
+    color: #6b7c8c;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.divider {
+    border: none;
+    border-top: 2px solid #2f4553;
+    margin: 24px 0;
+}
+
 .verification_result {
     border-radius: 6px;
     padding: 20px;

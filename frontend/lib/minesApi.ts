@@ -111,8 +111,13 @@ export const cashout = async (gameId: number): Promise<CashoutResponse> => {
   return response.data;
 };
 
-export const rerollSeed = async (): Promise<{ client_seed: string; message: string }> => {
+export const rerollSeed = async (): Promise<{ client_seed: string; seed_games_played: number; message: string }> => {
   const response = await axiosInstance.post("/api/mines/reroll-seed/");
+  return response.data;
+};
+
+export const getSeedInfo = async (): Promise<{ client_seed: string; seed_games_played: number }> => {
+  const response = await axiosInstance.get("/api/mines/seed-info/");
   return response.data;
 };
 
