@@ -242,11 +242,6 @@ export default function MinesPage() {
             <div className={styles.crowns_display}>
               {crownsCount}
             </div>
-            {errorMessage && (
-              <div className={styles.error_message}>
-                {errorMessage}
-              </div>
-            )}
             <button 
               className={`${styles.bet_section_button} ${styles.play_button_green}`}
               onClick={handlePlayClick}
@@ -267,6 +262,14 @@ export default function MinesPage() {
             </div>
             <div className={styles.crowns_display}>
               {netGain}
+            </div>
+            <div 
+              className={`${styles.error_slot} ${errorMessage ? styles.visible : ''}`}
+              role="status" 
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {errorMessage || '\u00A0'}
             </div>
           </div>
           <div className={styles.mines_container}>

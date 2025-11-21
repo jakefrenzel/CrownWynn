@@ -144,7 +144,7 @@ docker-compose exec backend python manage.py createsuperuser
    ```
 
 2. **Install Dependencies**
-   ```bash
+   ```bash 
    npm install
    ```
 
