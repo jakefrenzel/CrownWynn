@@ -48,13 +48,17 @@
     user-select: none;
 }
 html, body {
-  height: 100vh;
+  height: 100%;
   width: 100%;
+  background-color: #1a2c38;
+  overflow-x: hidden;
 }
 html {
     font-size: 16px;
+    overscroll-behavior: none;
 }
 body {
-  background: var(--bg-color);
+  background: #1a2c38;
   color: var(--text-color);
+  overscroll-behavior: none;
 }

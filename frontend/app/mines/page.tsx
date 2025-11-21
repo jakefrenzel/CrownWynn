@@ -12,8 +12,10 @@ import {
   revealTile,
   cashout,
   getActiveGame,
+  getGameHistory,
   type StartGameResponse,
 } from '@/lib/minesApi';
+import { verify_game } from '@/lib/minesVerification';
 
 export default function MinesPage() {
   const { user, loading, setBalance } = useUser();
@@ -28,6 +30,10 @@ export default function MinesPage() {
   const [minePositions, setMinePositions] = useState<number[]>([]);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [gameHistory, setGameHistory] = useState<any[]>([]);
+  const [showProvablyFair, setShowProvablyFair] = useState<boolean>(false);
+  const [selectedVerifyGame, setSelectedVerifyGame] = useState<any>(null);
+  const [verificationResult, setVerificationResult] = useState<any>(null);
   
   // Calculate crowns: 25 total tiles - mines - revealed tiles
   const crownsCount = 25 - minesCount - revealedTiles.length;
@@ -81,6 +87,9 @@ export default function MinesPage() {
       
       // Update user balance
       setBalance(parseFloat(response.balance));
+      
+      // Refresh game history
+      fetchGameHistory();
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to cashout');
     }
@@ -111,6 +120,35 @@ export default function MinesPage() {
     handleTileClick(randomTile);
   };
 
+  const handleVerifyGame = async () => {
+    if (!selectedVerifyGame) return;
+    
+    const result = await verify_game(
+      selectedVerifyGame.server_seed,
+      selectedVerifyGame.server_seed_hash,
+      selectedVerifyGame.client_seed,
+      selectedVerifyGame.nonce,
+      selectedVerifyGame.mines_count,
+      selectedVerifyGame.mine_positions
+    );
+    
+    setVerificationResult(result);
+  };
+
+  const openProvablyFairModal = () => {
+    if (gameHistory.length > 0) {
+      setSelectedVerifyGame(gameHistory[0]);
+    }
+    setVerificationResult(null);
+    setShowProvablyFair(true);
+  };
+
+  const closeProvablyFairModal = () => {
+    setShowProvablyFair(false);
+    setSelectedVerifyGame(null);
+    setVerificationResult(null);
+  };
+
   const handleTileClick = async (tilePosition: number) => {
     if (!gameId || !isGameActive || gameOver || revealedTiles.includes(tilePosition)) {
       return;
@@ -139,6 +177,9 @@ export default function MinesPage() {
         if (response.balance) {
           setBalance(parseFloat(response.balance));
         }
+        
+        // Refresh game history when game ends
+        fetchGameHistory();
       } else {
         // Safe tile revealed
         setRevealedTiles(response.revealed_tiles || []);
@@ -149,6 +190,17 @@ export default function MinesPage() {
       }
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to reveal tile');
+    }
+  };
+
+  const fetchGameHistory = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await getGameHistory();
+      setGameHistory(response.games);
+    } catch (error) {
+      console.error('Failed to fetch game history:', error);
     }
   };
 
@@ -180,6 +232,7 @@ export default function MinesPage() {
     };
     
     checkActiveGame();
+    fetchGameHistory();
   }, [user]);
 
   // Redirect to login if not authenticated
@@ -332,7 +385,189 @@ export default function MinesPage() {
             </div>
           </div>
         </div>
+
+        {/* Game History & Verification Section */}
+        <div className={styles.history_section}>
+          <div className={styles.history_header}>
+            <h2 className={styles.history_title}>Game History</h2>
+            <button 
+              className={styles.provably_fair_button}
+              onClick={openProvablyFairModal}
+              disabled={gameHistory.length === 0}
+            >
+              Provably Fair
+            </button>
+          </div>
+
+          {gameHistory.length === 0 ? (
+            <div className={styles.no_history}>
+              <p>No games played yet. Start playing to see your history!</p>
+            </div>
+          ) : (
+            <div className={styles.history_table_wrapper}>
+              <div className={styles.history_table_header}>
+                <div className={styles.col_game}>Game</div>
+                <div className={styles.col_bet}>Bet</div>
+                <div className={styles.col_mines}>Mines</div>
+                <div className={styles.col_tiles}>Tiles</div>
+                <div className={styles.col_multiplier}>Multiplier</div>
+                <div className={styles.col_payout}>Payout</div>
+                <div className={styles.col_profit}>Net Profit</div>
+                <div className={styles.col_date}>Date</div>
+              </div>
+              <div className={styles.history_scroll_container}>
+                <div className={styles.history_list}>
+                {gameHistory.map((game) => {
+                  const netProfit = parseFloat(game.net_profit);
+                  const isWin = game.status === 'won';
+                  
+                  return (
+                    <div key={game.game_id} className={styles.history_row}>
+                      <div className={styles.col_game}>
+                        <span className={`${styles.status_badge} ${styles[game.status]}`}>
+                          {isWin ? '✓' : '✗'}
+                        </span>
+                        #{game.game_id}
+                      </div>
+                      <div className={styles.col_bet}>{game.bet_amount} 👑</div>
+                      <div className={styles.col_mines}>{game.mines_count}</div>
+                      <div className={styles.col_tiles}>{game.tiles_revealed}</div>
+                      <div className={styles.col_multiplier}>{game.multiplier}x</div>
+                      <div className={styles.col_payout}>{game.payout} 👑</div>
+                      <div className={`${styles.col_profit} ${netProfit >= 0 ? styles.profit : styles.loss}`}>
+                        {netProfit >= 0 ? '+' : ''}{game.net_profit} 👑
+                      </div>
+                      <div className={styles.col_date}>
+                        {new Date(game.completed_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
+
+      {/* Provably Fair Modal */}
+      {showProvablyFair && (
+        <div className={styles.modal_overlay} onClick={closeProvablyFairModal}>
+          <div className={styles.modal_content} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modal_header}>
+              <h2 className={styles.modal_title}>Provably Fair Verification</h2>
+              <button className={styles.modal_close} onClick={closeProvablyFairModal}>✕</button>
+            </div>
+
+            <div className={styles.modal_body}>
+              <p className={styles.modal_description}>
+                Verify game integrity using cryptographic seeds. All game outcomes are deterministic and verifiable.
+              </p>
+
+              <div className={styles.form_group}>
+                <label className={styles.form_label}>Select Game:</label>
+                <select 
+                  className={styles.form_select}
+                  value={selectedVerifyGame?.game_id || ''}
+                  onChange={(e) => {
+                    const game = gameHistory.find(g => g.game_id === parseInt(e.target.value));
+                    setSelectedVerifyGame(game);
+                    setVerificationResult(null);
+                  }}
+                >
+                  {gameHistory.map((game) => (
+                    <option key={game.game_id} value={game.game_id}>
+                      Game #{game.game_id} - {game.status === 'won' ? 'Won' : 'Lost'} - {game.bet_amount} 👑
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedVerifyGame && (
+                <>
+                  <div className={styles.seed_info}>
+                    <div className={styles.seed_item}>
+                      <span className={styles.seed_label}>Server Seed Hash (Pre-game):</span>
+                      <span className={styles.seed_value}>{selectedVerifyGame.server_seed_hash}</span>
+                    </div>
+
+                    <div className={styles.seed_item}>
+                      <span className={styles.seed_label}>Server Seed (Revealed):</span>
+                      <span className={styles.seed_value}>{selectedVerifyGame.server_seed}</span>
+                    </div>
+
+                    <div className={styles.seed_item}>
+                      <span className={styles.seed_label}>Client Seed:</span>
+                      <span className={styles.seed_value}>{selectedVerifyGame.client_seed}</span>
+                    </div>
+
+                    <div className={styles.seed_item}>
+                      <span className={styles.seed_label}>Nonce:</span>
+                      <span className={styles.seed_value}>{selectedVerifyGame.nonce}</span>
+                    </div>
+
+                    <div className={styles.seed_item}>
+                      <span className={styles.seed_label}>Mines Count:</span>
+                      <span className={styles.seed_value}>{selectedVerifyGame.mines_count}</span>
+                    </div>
+                  </div>
+
+                  <button 
+                    className={styles.verify_button}
+                    onClick={handleVerifyGame}
+                  >
+                    Verify This Game
+                  </button>
+
+                  {verificationResult && (
+                    <div className={`${styles.verification_result} ${verificationResult.isValid ? styles.valid : styles.invalid}`}>
+                      <div className={styles.result_header}>
+                        {verificationResult.isValid ? (
+                          <><span className={styles.check_icon}>✓</span> Game Verified Successfully!</>
+                        ) : (
+                          <><span className={styles.x_icon}>✗</span> Verification Failed</>
+                        )}
+                      </div>
+                      
+                      <p className={styles.result_text}>
+                        {verificationResult.isValid 
+                          ? 'Regenerated mine positions match the actual game mines.'
+                          : 'Mine positions do not match. This game may have been tampered with.'}
+                      </p>
+
+                      <div className={styles.mine_grid}>
+                        <div className={styles.grid_title}>Mine Positions:</div>
+                        <div className={styles.verification_grid}>
+                          {Array.from({ length: 25 }, (_, i) => {
+                            const isMine = selectedVerifyGame.mine_positions.includes(i);
+                            const wasRevealed = selectedVerifyGame.revealed_tiles.includes(i);
+                            
+                            return (
+                              <div
+                                key={i}
+                                className={`${styles.verify_tile} ${
+                                  isMine ? styles.verify_mine : ''
+                                } ${wasRevealed && !isMine ? styles.verify_revealed : ''}`}
+                              >
+                                {isMine ? '💣' : wasRevealed ? '👑' : ''}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
