@@ -29,8 +29,8 @@ export default function MinesPage() {
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   
-  // Calculate crowns: 25 total tiles - mines
-  const crownsCount = 25 - minesCount;
+  // Calculate crowns: 25 total tiles - mines - revealed tiles
+  const crownsCount = 25 - minesCount - revealedTiles.length;
 
   const handleHalfBet = () => {
     const current = parseFloat(betAmount) || 0;
@@ -92,6 +92,23 @@ export default function MinesPage() {
     } else {
       handleStartGame();
     }
+  };
+
+  const handleAutoPick = () => {
+    if (!isGameActive || gameOver) return;
+    
+    // Get all unrevealed tiles (0-24, excluding already revealed)
+    const unrevealedTiles = Array.from({ length: 25 }, (_, i) => i)
+      .filter(i => !revealedTiles.includes(i));
+    
+    if (unrevealedTiles.length === 0) return;
+    
+    // Pick a random unrevealed tile
+    const randomIndex = Math.floor(Math.random() * unrevealedTiles.length);
+    const randomTile = unrevealedTiles[randomIndex];
+    
+    // Click that tile
+    handleTileClick(randomTile);
   };
 
   const handleTileClick = async (tilePosition: number) => {
@@ -208,6 +225,7 @@ export default function MinesPage() {
                   onChange={(e) => setBetAmount(e.target.value)}
                   min="0"
                   step="0.01"
+                  disabled={isGameActive}
                 />
                 <Image
                   src="/assets/crown.png"
@@ -217,10 +235,18 @@ export default function MinesPage() {
                   className={styles.input_gemstone_image}
                 />
               </div>
-              <button className={styles.quick_bet_button} onClick={handleHalfBet}>
+              <button 
+                className={styles.quick_bet_button} 
+                onClick={handleHalfBet}
+                disabled={isGameActive}
+              >
                 ½
               </button>
-              <button className={styles.quick_bet_button} onClick={handleDoubleBet}>
+              <button 
+                className={styles.quick_bet_button} 
+                onClick={handleDoubleBet}
+                disabled={isGameActive}
+              >
                 2×
               </button>
             </div>
@@ -231,6 +257,7 @@ export default function MinesPage() {
               className={styles.mines_select}
               value={minesCount}
               onChange={(e) => setMinesCount(Number(e.target.value))}
+              disabled={isGameActive}
             >
               {Array.from({ length: 24 }, (_, i) => i + 1).map((num) => (
                 <option key={num} value={num}>{num}</option>

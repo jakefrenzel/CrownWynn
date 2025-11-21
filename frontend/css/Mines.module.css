@@ -102,6 +102,17 @@
     background-color: #253d4d;
 }
 
+.quick_bet_button:disabled {
+    background-color: #253d4d;
+    color: #6b7c8c;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.quick_bet_button:disabled:hover {
+    background-color: #253d4d;
+}
+
 .bet_input_field {
     height: 100%;
     width: 80%;
@@ -137,6 +148,12 @@
 .bet_input_field[type=number] {
     -moz-appearance: textfield;
     appearance: textfield;
+}
+
+.bet_input_field:disabled {
+    color: #6b7c8c;
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 .input_gemstone_image {
@@ -180,6 +197,14 @@
     background-color: #2f4553;
     color: #fff;
     padding: 8px;
+}
+
+.mines_select:disabled {
+    background-color: #253d4d;
+    color: #6b7c8c;
+    cursor: not-allowed;
+    opacity: 0.6;
+    border-color: #253d4d;
 }
 
 .crowns_display {
