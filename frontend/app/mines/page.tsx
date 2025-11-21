@@ -13,6 +13,8 @@ import {
   cashout,
   getActiveGame,
   getGameHistory,
+  getSeedInfo,
+  rerollSeed,
   type StartGameResponse,
 } from '@/lib/minesApi';
 import { verify_game } from '@/lib/minesVerification';
@@ -34,6 +36,8 @@ export default function MinesPage() {
   const [showProvablyFair, setShowProvablyFair] = useState<boolean>(false);
   const [selectedVerifyGame, setSelectedVerifyGame] = useState<any>(null);
   const [verificationResult, setVerificationResult] = useState<any>(null);
+  const [currentClientSeed, setCurrentClientSeed] = useState<string>('');
+  const [seedGamesPlayed, setSeedGamesPlayed] = useState<number>(0);
   
   // Calculate crowns: 25 total tiles - mines - revealed tiles
   const crownsCount = 25 - minesCount - revealedTiles.length;
@@ -135,11 +139,39 @@ export default function MinesPage() {
     setVerificationResult(result);
   };
 
+  const fetchSeedInfo = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await getSeedInfo();
+      setCurrentClientSeed(response.client_seed);
+      setSeedGamesPlayed(response.seed_games_played);
+    } catch (error) {
+      console.error('Failed to fetch seed info:', error);
+    }
+  };
+
+  const handleRerollSeed = async () => {
+    if (isGameActive) {
+      setErrorMessage('Cannot reroll seed while a game is active');
+      return;
+    }
+    
+    try {
+      const response = await rerollSeed();
+      setCurrentClientSeed(response.client_seed);
+      setSeedGamesPlayed(response.seed_games_played);
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.error || 'Failed to reroll seed');
+    }
+  };
+
   const openProvablyFairModal = () => {
     if (gameHistory.length > 0) {
       setSelectedVerifyGame(gameHistory[0]);
     }
     setVerificationResult(null);
+    fetchSeedInfo();
     setShowProvablyFair(true);
   };
 
@@ -233,6 +265,7 @@ export default function MinesPage() {
     
     checkActiveGame();
     fetchGameHistory();
+    fetchSeedInfo();
   }, [user]);
 
   // Redirect to login if not authenticated
@@ -468,6 +501,34 @@ export default function MinesPage() {
               <p className={styles.modal_description}>
                 Verify game integrity using cryptographic seeds. All game outcomes are deterministic and verifiable.
               </p>
+
+              {/* Current Seed Information */}
+              <div className={styles.current_seed_section}>
+                <h3 className={styles.section_title}>Current Active Seed</h3>
+                <div className={styles.seed_info}>
+                  <div className={styles.seed_item}>
+                    <span className={styles.seed_label}>Client Seed:</span>
+                    <span className={styles.seed_value}>{currentClientSeed || 'Loading...'}</span>
+                  </div>
+
+                  <div className={styles.seed_item}>
+                    <span className={styles.seed_label}>Games Played:</span>
+                    <span className={styles.seed_value}>{seedGamesPlayed}</span>
+                  </div>
+                </div>
+
+                <button 
+                  className={styles.reroll_button}
+                  onClick={handleRerollSeed}
+                  disabled={isGameActive}
+                >
+                  {isGameActive ? 'Cannot reroll during game' : 'Reroll Client Seed'}
+                </button>
+              </div>
+
+              <hr className={styles.divider} />
+
+              <h3 className={styles.section_title}>Verify Past Games</h3>
 
               <div className={styles.form_group}>
                 <label className={styles.form_label}>Select Game:</label>
