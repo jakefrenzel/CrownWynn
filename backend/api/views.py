@@ -370,6 +370,41 @@ class RevealTileView(APIView):
                     # Calculate new multiplier
                     new_multiplier = calculate_multiplier(tiles_revealed, game.mines_count)
                     game.current_multiplier = new_multiplier
+                    
+                    # Check if all safe tiles have been revealed (auto-win)
+                    safe_tiles_remaining = game.safe_tiles_remaining()
+                    
+                    if safe_tiles_remaining == 0:
+                        # All safe tiles revealed - automatic win!
+                        from decimal import Decimal
+                        payout_amount = float(game.bet_amount) * float(new_multiplier)
+                        net_profit = payout_amount - float(game.bet_amount)
+                        
+                        profile = request.user.profile
+                        profile.balance += Decimal(str(payout_amount))
+                        profile.save()
+                        
+                        game.status = 'won'
+                        game.completed_at = timezone.now()
+                        game.payout_amount = payout_amount
+                        game.net_profit = net_profit
+                        game.save()
+                        
+                        return Response({
+                            "game_over": True,
+                            "hit_mine": False,
+                            "auto_win": True,
+                            "tile_position": tile_position,
+                            "revealed_tiles": game.revealed_tiles,
+                            "current_multiplier": str(new_multiplier),
+                            "payout": f"{payout_amount:.2f}",
+                            "net_profit": f"{net_profit:.2f}",
+                            "mine_positions": game.mine_positions,
+                            "server_seed": game.server_seed,
+                            "balance": str(profile.balance),
+                            "message": "Congratulations! All safe tiles revealed!"
+                        }, status=status.HTTP_200_OK)
+                    
                     game.save()
                     
                     # Calculate potential payout
@@ -383,7 +418,7 @@ class RevealTileView(APIView):
                         "current_multiplier": str(new_multiplier),
                         "potential_payout": f"{potential_payout:.2f}",
                         "tiles_revealed": tiles_revealed,
-                        "safe_tiles_remaining": game.safe_tiles_remaining()
+                        "safe_tiles_remaining": safe_tiles_remaining
                     }, status=status.HTTP_200_OK)
                     
         except Exception as e:

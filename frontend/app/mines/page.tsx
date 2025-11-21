@@ -121,13 +121,18 @@ export default function MinesPage() {
       const response = await revealTile(gameId, tilePosition);
       
       if (response.game_over) {
-        // Hit a mine or completed game
+        // Hit a mine or completed game (auto-win or loss)
         setIsGameActive(false);
         setGameOver(true);
         setMinePositions(response.mine_positions || []);
         
         if (response.hit_mine) {
           setNetGain(response.net_profit || '0.00');
+        } else if (response.auto_win) {
+          // Auto-win when all safe tiles revealed
+          setNetGain(response.net_profit || '0.00');
+          setRevealedTiles(response.revealed_tiles || []);
+          setMultiplier(parseFloat(response.current_multiplier || '1.00'));
         }
         
         // Update user balance
@@ -279,6 +284,7 @@ export default function MinesPage() {
             <button 
               className={`${styles.bet_section_button} ${!isGameActive ? styles.disabled : ''}`}
               disabled={!isGameActive}
+              onClick={handleAutoPick}
             >
               Auto Pick
             </button>

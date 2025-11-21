@@ -15,6 +15,7 @@ export interface StartGameResponse {
 export interface RevealTileResponse {
   game_over: boolean;
   hit_mine: boolean;
+  auto_win?: boolean;
   tile_position: number;
   revealed_tiles?: number[];
   current_multiplier?: string;
@@ -26,6 +27,7 @@ export interface RevealTileResponse {
   payout?: string;
   net_profit?: string;
   balance?: string;
+  message?: string;
 }
 
 export interface CashoutResponse {
