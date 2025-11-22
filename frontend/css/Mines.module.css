@@ -352,8 +352,10 @@
     min-height: 48px;
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     margin-top: 10px;
+    width: 100%;
+    box-sizing: border-box;
     opacity: 0;
     transform: translateY(-4px);
     transition: opacity 200ms ease, transform 200ms ease;
