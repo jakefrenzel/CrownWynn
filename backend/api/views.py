@@ -19,13 +19,18 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 from api.serializers import ProfileSerializer
-from api.models import MinesGame
+from api.models import MinesGame, KenoGame
 from api.mines_utils import (
     generate_server_seed,
     generate_client_seed,
     hash_seed,
     generate_mine_positions,
     calculate_multiplier,
+)
+from api.keno_utils import (
+    draw_keno_numbers,
+    calculate_keno_multiplier,
+    calculate_matches,
 )
 from django.utils import timezone
 
@@ -748,6 +753,309 @@ class MinesStatsView(APIView):
                 "biggest_win": str(profile.mines_biggest_win),
                 "current_streak": profile.mines_current_streak,
                 "best_streak": profile.mines_best_streak,
+                "average_bet": f"{avg_bet:.2f}"
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Keno Game Views
+class StartKenoGameView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            bet_amount = request.data.get('bet_amount')
+            numbers_selected = request.data.get('numbers_selected')
+            client_seed = request.data.get('client_seed')  # Optional - player can provide their own
+            
+            # Validate inputs
+            if not bet_amount or not numbers_selected:
+                return Response({
+                    "error": "bet_amount and numbers_selected are required"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            bet_amount = float(bet_amount)
+            
+            if not isinstance(numbers_selected, list):
+                return Response({
+                    "error": "numbers_selected must be a list"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if bet_amount <= 0:
+                return Response({
+                    "error": "Bet amount must be positive"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validate numbers selected
+            if len(numbers_selected) < 1 or len(numbers_selected) > 10:
+                return Response({
+                    "error": "Must select between 1 and 10 numbers"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validate all numbers are in range 1-40 and unique
+            if not all(isinstance(n, int) and 1 <= n <= 40 for n in numbers_selected):
+                return Response({
+                    "error": "All numbers must be integers between 1 and 40"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if len(numbers_selected) != len(set(numbers_selected)):
+                return Response({
+                    "error": "Cannot select duplicate numbers"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if user has an active game
+            active_game = KenoGame.objects.filter(
+                user=request.user,
+                status='active'
+            ).first()
+            
+            if active_game:
+                return Response({
+                    "error": "You already have an active game. Please finish it first."
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if user has sufficient balance
+            if request.user.profile.balance < bet_amount:
+                return Response({
+                    "error": "Insufficient balance"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Deduct bet from balance and create game
+            with transaction.atomic():
+                profile = request.user.profile
+                from decimal import Decimal
+                profile.balance -= Decimal(str(bet_amount))
+                
+                # Get current nonce and increment it
+                current_nonce = profile.mines_nonce  # Using same nonce counter as mines
+                profile.mines_nonce += 1
+                
+                # Increment games played on current seed
+                profile.seed_games_played += 1
+                
+                # Update statistics
+                profile.keno_games_played += 1
+                profile.keno_total_wagered += Decimal(str(bet_amount))
+                
+                # Use pre-generated server seed if it exists, otherwise generate new one
+                if profile.next_server_seed and profile.next_server_seed_hash:
+                    server_seed = profile.next_server_seed
+                    server_seed_hash = profile.next_server_seed_hash
+                else:
+                    server_seed = generate_server_seed()
+                    server_seed_hash = hash_seed(server_seed)
+                
+                # Generate new server seed for next game
+                next_server_seed = generate_server_seed()
+                profile.next_server_seed = next_server_seed
+                profile.next_server_seed_hash = hash_seed(next_server_seed)
+                
+                # Use provided client_seed, or use profile's current seed, or generate new one
+                if not client_seed:
+                    if profile.current_client_seed:
+                        client_seed = profile.current_client_seed
+                    else:
+                        client_seed = generate_client_seed()
+                        profile.current_client_seed = client_seed
+                
+                profile.save()
+                
+                # Draw 20 numbers using provably fair algorithm
+                drawn_numbers = draw_keno_numbers(server_seed, client_seed, current_nonce)
+                
+                # Calculate matches and multiplier
+                matches = calculate_matches(numbers_selected, drawn_numbers)
+                multiplier = calculate_keno_multiplier(len(numbers_selected), matches)
+                
+                # Calculate payout
+                payout_amount = bet_amount * multiplier if multiplier > 0 else 0
+                net_profit = payout_amount - bet_amount
+                
+                # Determine win/loss status
+                if multiplier > 0:
+                    game_status = 'won'
+                    profile.keno_games_won += 1
+                    
+                    # Update streak (win makes it positive or increases it)
+                    if profile.keno_current_streak < 0:
+                        profile.keno_current_streak = 1
+                    else:
+                        profile.keno_current_streak += 1
+                    
+                    # Update best streak
+                    if profile.keno_current_streak > profile.keno_best_streak:
+                        profile.keno_best_streak = profile.keno_current_streak
+                    
+                    # Add payout to balance
+                    profile.balance += Decimal(str(payout_amount))
+                    
+                    # Update biggest win
+                    if Decimal(str(payout_amount)) > profile.keno_biggest_win:
+                        profile.keno_biggest_win = Decimal(str(payout_amount))
+                else:
+                    game_status = 'lost'
+                    profile.keno_games_lost += 1
+                    
+                    # Update streak (loss makes it negative or decreases it)
+                    if profile.keno_current_streak > 0:
+                        profile.keno_current_streak = -1
+                    else:
+                        profile.keno_current_streak -= 1
+                
+                # Update profit stats
+                profile.keno_total_profit += Decimal(str(net_profit))
+                profile.save()
+                
+                # Create game record
+                game = KenoGame.objects.create(
+                    user=request.user,
+                    bet_amount=bet_amount,
+                    numbers_selected=sorted(numbers_selected),
+                    server_seed=server_seed,
+                    server_seed_hash=server_seed_hash,
+                    client_seed=client_seed,
+                    nonce=current_nonce,
+                    drawn_numbers=drawn_numbers,
+                    matches=matches,
+                    current_multiplier=multiplier,
+                    status=game_status,
+                    payout_amount=payout_amount,
+                    net_profit=net_profit,
+                    completed_at=timezone.now()
+                )
+            
+            return Response({
+                "game_id": game.id,
+                "server_seed": server_seed,  # Reveal immediately since game is instant
+                "server_seed_hash": server_seed_hash,
+                "client_seed": client_seed,
+                "nonce": game.nonce,
+                "numbers_selected": sorted(numbers_selected),
+                "drawn_numbers": drawn_numbers,
+                "matches": matches,
+                "multiplier": str(multiplier),
+                "payout": f"{payout_amount:.2f}",
+                "net_profit": f"{net_profit:.2f}",
+                "status": game_status,
+                "balance": str(profile.balance)
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class KenoHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            # Get completed Keno games for user
+            games = KenoGame.objects.filter(
+                user=request.user
+            ).order_by('-completed_at')[:50]  # Last 50 games
+            
+            games_data = []
+            for game in games:
+                games_data.append({
+                    "game_id": game.id,
+                    "bet_amount": str(game.bet_amount),
+                    "numbers_selected": game.numbers_selected,
+                    "spots_selected": len(game.numbers_selected),
+                    "drawn_numbers": game.drawn_numbers,
+                    "matches": game.matches,
+                    "multiplier": str(game.current_multiplier),
+                    "payout": str(game.payout_amount) if game.payout_amount else "0.00",
+                    "net_profit": str(game.net_profit) if game.net_profit else str(-game.bet_amount),
+                    "status": game.status,
+                    "created_at": game.created_at.isoformat(),
+                    "completed_at": game.completed_at.isoformat() if game.completed_at else None,
+                    # Provably fair data
+                    "server_seed": game.server_seed,
+                    "server_seed_hash": game.server_seed_hash,
+                    "client_seed": game.client_seed,
+                    "nonce": game.nonce
+                })
+            
+            return Response({
+                "games": games_data,
+                "count": len(games_data)
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ActiveKenoGameView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            # Get active Keno game for user
+            active_game = KenoGame.objects.filter(
+                user=request.user,
+                status='active'
+            ).first()
+            
+            if not active_game:
+                return Response({
+                    "has_active_game": False
+                }, status=status.HTTP_200_OK)
+            
+            return Response({
+                "has_active_game": True,
+                "game_id": active_game.id,
+                "bet_amount": str(active_game.bet_amount),
+                "numbers_selected": active_game.numbers_selected,
+                "drawn_numbers": active_game.drawn_numbers,
+                "matches": active_game.matches,
+                "multiplier": str(active_game.current_multiplier),
+                "server_seed_hash": active_game.server_seed_hash,
+                "client_seed": active_game.client_seed,
+                "nonce": active_game.nonce,
+                "created_at": active_game.created_at.isoformat()
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class KenoStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            profile = request.user.profile
+            
+            # Calculate win rate
+            win_rate = 0
+            if profile.keno_games_played > 0:
+                win_rate = (profile.keno_games_won / profile.keno_games_played) * 100
+            
+            # Calculate average bet
+            avg_bet = 0
+            if profile.keno_games_played > 0:
+                avg_bet = float(profile.keno_total_wagered) / profile.keno_games_played
+            
+            return Response({
+                "games_played": profile.keno_games_played,
+                "games_won": profile.keno_games_won,
+                "games_lost": profile.keno_games_lost,
+                "win_rate": f"{win_rate:.1f}",
+                "total_wagered": str(profile.keno_total_wagered),
+                "total_profit": str(profile.keno_total_profit),
+                "biggest_win": str(profile.keno_biggest_win),
+                "current_streak": profile.keno_current_streak,
+                "best_streak": profile.keno_best_streak,
                 "average_bet": f"{avg_bet:.2f}"
             }, status=status.HTTP_200_OK)
             
