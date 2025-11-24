@@ -12,6 +12,16 @@ class Profile(models.Model):
     seed_games_played = models.IntegerField(default=0)  # Number of games played on current seed
     next_server_seed = models.CharField(max_length=64, blank=True, null=True)  # Pre-generated server seed for next game
     next_server_seed_hash = models.CharField(max_length=64, blank=True, null=True)  # Hash of next server seed for transparency
+    
+    # Mines game statistics
+    mines_games_played = models.IntegerField(default=0)  # Total games played
+    mines_games_won = models.IntegerField(default=0)  # Total games won
+    mines_games_lost = models.IntegerField(default=0)  # Total games lost
+    mines_total_wagered = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)  # Total amount wagered
+    mines_total_profit = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)  # Total profit/loss (can be negative)
+    mines_biggest_win = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)  # Biggest single win payout
+    mines_current_streak = models.IntegerField(default=0)  # Current win streak (positive) or loss streak (negative)
+    mines_best_streak = models.IntegerField(default=0)  # Best win streak ever
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

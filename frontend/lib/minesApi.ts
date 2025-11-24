@@ -130,3 +130,21 @@ export const getActiveGame = async (): Promise<ActiveGameResponse> => {
   const response = await axiosInstance.get("/api/mines/active/");
   return response.data;
 };
+
+export interface MinesStatsResponse {
+  games_played: number;
+  games_won: number;
+  games_lost: number;
+  win_rate: string;
+  total_wagered: string;
+  total_profit: string;
+  biggest_win: string;
+  current_streak: number;
+  best_streak: number;
+  average_bet: string;
+}
+
+export const getMinesStats = async (): Promise<MinesStatsResponse> => {
+  const response = await axiosInstance.get("/api/mines/stats/");
+  return response.data;
+};

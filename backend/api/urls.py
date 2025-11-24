@@ -17,6 +17,7 @@ from api.views import (
     GetSeedInfoView,
     GameHistoryView,
     ActiveGameView,
+    MinesStatsView,
 )
 
 urlpatterns = [
@@ -43,4 +44,5 @@ urlpatterns = [
     path("mines/seed-info/", GetSeedInfoView.as_view(), name="mines-seed-info"),
     path("mines/history/", GameHistoryView.as_view(), name="mines-history"),
     path("mines/active/", ActiveGameView.as_view(), name="mines-active"),
+    path("mines/stats/", MinesStatsView.as_view(), name="mines-stats"),
 ]

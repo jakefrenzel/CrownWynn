@@ -259,6 +259,10 @@ class StartMinesGameView(APIView):
                 # Increment games played on current seed
                 profile.seed_games_played += 1
                 
+                # Update statistics
+                profile.mines_games_played += 1
+                profile.mines_total_wagered += Decimal(str(bet_amount))
+                
                 # Use pre-generated server seed if it exists, otherwise generate new one
                 if profile.next_server_seed and profile.next_server_seed_hash:
                     server_seed = profile.next_server_seed
@@ -374,6 +378,19 @@ class RevealTileView(APIView):
                     game.net_profit = -game.bet_amount
                     game.save()
                     
+                    # Update player statistics
+                    profile = request.user.profile
+                    profile.mines_games_lost += 1
+                    profile.mines_total_profit -= game.bet_amount
+                    
+                    # Update streak (loss makes it negative or decreases it)
+                    if profile.mines_current_streak > 0:
+                        profile.mines_current_streak = -1  # Start loss streak
+                    else:
+                        profile.mines_current_streak -= 1  # Continue loss streak
+                    
+                    profile.save()
+                    
                     return Response({
                         "game_over": True,
                         "hit_mine": True,
@@ -404,6 +421,25 @@ class RevealTileView(APIView):
                         
                         profile = request.user.profile
                         profile.balance += Decimal(str(payout_amount))
+                        
+                        # Update player statistics
+                        profile.mines_games_won += 1
+                        profile.mines_total_profit += Decimal(str(net_profit))
+                        
+                        # Update biggest win
+                        if Decimal(str(payout_amount)) > profile.mines_biggest_win:
+                            profile.mines_biggest_win = Decimal(str(payout_amount))
+                        
+                        # Update streak (win makes it positive or increases it)
+                        if profile.mines_current_streak < 0:
+                            profile.mines_current_streak = 1  # Start win streak
+                        else:
+                            profile.mines_current_streak += 1  # Continue win streak
+                        
+                        # Update best streak
+                        if profile.mines_current_streak > profile.mines_best_streak:
+                            profile.mines_best_streak = profile.mines_current_streak
+                        
                         profile.save()
                         
                         game.status = 'won'
@@ -487,6 +523,25 @@ class CashoutView(APIView):
                 
                 profile = request.user.profile
                 profile.balance += Decimal(str(payout_amount))
+                
+                # Update player statistics
+                profile.mines_games_won += 1
+                profile.mines_total_profit += Decimal(str(net_profit))
+                
+                # Update biggest win
+                if Decimal(str(payout_amount)) > profile.mines_biggest_win:
+                    profile.mines_biggest_win = Decimal(str(payout_amount))
+                
+                # Update streak (win makes it positive or increases it)
+                if profile.mines_current_streak < 0:
+                    profile.mines_current_streak = 1  # Start win streak
+                else:
+                    profile.mines_current_streak += 1  # Continue win streak
+                
+                # Update best streak
+                if profile.mines_current_streak > profile.mines_best_streak:
+                    profile.mines_best_streak = profile.mines_current_streak
+                
                 profile.save()
                 
                 game.status = 'won'
@@ -658,6 +713,42 @@ class ActiveGameView(APIView):
                 "client_seed": active_game.client_seed,
                 "nonce": active_game.nonce,
                 "created_at": active_game.created_at.isoformat()
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class MinesStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            profile = request.user.profile
+            
+            # Calculate win rate
+            win_rate = 0
+            if profile.mines_games_played > 0:
+                win_rate = (profile.mines_games_won / profile.mines_games_played) * 100
+            
+            # Calculate average bet
+            avg_bet = 0
+            if profile.mines_games_played > 0:
+                avg_bet = float(profile.mines_total_wagered) / profile.mines_games_played
+            
+            return Response({
+                "games_played": profile.mines_games_played,
+                "games_won": profile.mines_games_won,
+                "games_lost": profile.mines_games_lost,
+                "win_rate": f"{win_rate:.1f}",
+                "total_wagered": str(profile.mines_total_wagered),
+                "total_profit": str(profile.mines_total_profit),
+                "biggest_win": str(profile.mines_biggest_win),
+                "current_streak": profile.mines_current_streak,
+                "best_streak": profile.mines_best_streak,
+                "average_bet": f"{avg_bet:.2f}"
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
