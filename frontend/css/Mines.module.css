@@ -392,6 +392,12 @@
     box-shadow: 0 0 12px rgba(43, 120, 202, 0.4);
 }
 
+.keno_number.keno_selected:hover:not(:disabled) {
+    background-color: #2b78ca;
+    border-color: #3685d9;
+    transform: scale(1.05);
+}
+
 .keno_number.keno_drawn {
     background-color: #7f8ea3;
     border-color: #8d9db3;
