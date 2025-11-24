@@ -10,6 +10,8 @@ class Profile(models.Model):
     mines_nonce = models.IntegerField(default=0)  # Nonce counter for provably fair mines games (always increments)
     current_client_seed = models.CharField(max_length=64, blank=True, null=True)  # Current client seed for provably fair
     seed_games_played = models.IntegerField(default=0)  # Number of games played on current seed
+    next_server_seed = models.CharField(max_length=64, blank=True, null=True)  # Pre-generated server seed for next game
+    next_server_seed_hash = models.CharField(max_length=64, blank=True, null=True)  # Hash of next server seed for transparency
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

@@ -38,6 +38,7 @@ export default function MinesPage() {
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [currentClientSeed, setCurrentClientSeed] = useState<string>('');
   const [seedGamesPlayed, setSeedGamesPlayed] = useState<number>(0);
+  const [nextServerSeedHash, setNextServerSeedHash] = useState<string>('');
   
   // Calculate crowns: 25 total tiles - mines - revealed tiles
   const crownsCount = 25 - minesCount - revealedTiles.length;
@@ -146,6 +147,7 @@ export default function MinesPage() {
       const response = await getSeedInfo();
       setCurrentClientSeed(response.client_seed);
       setSeedGamesPlayed(response.seed_games_played);
+      setNextServerSeedHash(response.next_server_seed_hash);
     } catch (error) {
       console.error('Failed to fetch seed info:', error);
     }
@@ -515,6 +517,11 @@ export default function MinesPage() {
                     <span className={styles.seed_label}>Games Played:</span>
                     <span className={styles.seed_value}>{seedGamesPlayed}</span>
                   </div>
+
+                  <div className={styles.seed_item}>
+                    <span className={styles.seed_label}>Next Server Seed Hash:</span>
+                    <span className={styles.seed_value}>{nextServerSeedHash || 'Loading...'}</span>
+                  </div>
                 </div>
 
                 <button 
@@ -543,7 +550,7 @@ export default function MinesPage() {
                 >
                   {gameHistory.map((game) => (
                     <option key={game.game_id} value={game.game_id}>
-                      Game #{game.game_id} - {game.status === 'won' ? 'Won' : 'Lost'} - {game.bet_amount} 👑
+                      Game #{game.game_id} - {game.status === 'won' ? `Won ${game.payout}` : `Lost ${game.bet_amount}`} 👑
                     </option>
                   ))}
                 </select>
