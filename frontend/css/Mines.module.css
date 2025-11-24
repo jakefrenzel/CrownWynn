@@ -353,9 +353,9 @@
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(5, 1fr);
-    gap: 8px;
-    width: 90%;
-    max-width: 600px;
+    gap: 10px;
+    width: 95%;
+    max-width: 720px;
     aspect-ratio: 8/5;
 }
 
@@ -366,7 +366,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: var(--font-nunito-sans), sans-serif;
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #b1bad3;
     display: flex;
