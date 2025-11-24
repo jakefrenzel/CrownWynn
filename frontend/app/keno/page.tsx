@@ -8,30 +8,28 @@ import { useUser } from '@/context/UserContext';
 import Image from 'next/image';
 import styles from '@/css/Mines.module.css';
 import {
-  startMinesGame,
-  revealTile,
-  cashout,
-  getActiveGame,
-  getGameHistory,
-  getSeedInfo,
-  rerollSeed,
-  getMinesStats,
-  type StartGameResponse,
-} from '@/lib/minesApi';
-import { verify_game } from '@/lib/minesVerification';
+  startKenoGame,
+  getActiveKenoGame,
+  getKenoGameHistory,
+  getKenoStats,
+  type StartKenoGameResponse,
+} from '@/lib/kenoApi';
+import { verify_keno_game } from '@/lib/kenoVerification';
+import { getSeedInfo, rerollSeed } from '@/lib/minesApi';
 
 export default function KenoPage() {
   const { user, loading, setBalance } = useUser();
   const router = useRouter();
   const [betAmount, setBetAmount] = useState<string>('0.00');
-  const [minesCount, setMinesCount] = useState<number>(3);
+  const [spotsToSelect, setSpotsToSelect] = useState<number>(10);
+  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
+  const [drawnNumbers, setDrawnNumbers] = useState<number[]>([]);
+  const [matches, setMatches] = useState<number>(0);
   const [isGameActive, setIsGameActive] = useState<boolean>(false);
-  const [multiplier, setMultiplier] = useState<number>(1.00);
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const [multiplier, setMultiplier] = useState<number>(0.00);
   const [netGain, setNetGain] = useState<string>('0.00');
   const [gameId, setGameId] = useState<number | null>(null);
-  const [revealedTiles, setRevealedTiles] = useState<number[]>([]);
-  const [minePositions, setMinePositions] = useState<number[]>([]);
-  const [gameOver, setGameOver] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [gameHistory, setGameHistory] = useState<any[]>([]);
   const [showProvablyFair, setShowProvablyFair] = useState<boolean>(false);
@@ -43,9 +41,7 @@ export default function KenoPage() {
   const verificationResultRef = useRef<HTMLDivElement>(null);
   const [showStats, setShowStats] = useState<boolean>(false);
   const [stats, setStats] = useState<any>(null);
-  
-  // Calculate crowns: 25 total tiles - mines - revealed tiles
-  const crownsCount = 25 - minesCount - revealedTiles.length;
+  const [currentDrawIndex, setCurrentDrawIndex] = useState<number>(0);
 
   const handleHalfBet = () => {
     const current = parseFloat(betAmount) || 0;
@@ -55,6 +51,20 @@ export default function KenoPage() {
   const handleDoubleBet = () => {
     const current = parseFloat(betAmount) || 0;
     setBetAmount((current * 2).toFixed(2));
+  };
+
+  const handleNumberClick = (number: number) => {
+    if (isGameActive || isAnimating) return;
+    
+    if (selectedNumbers.includes(number)) {
+      // Deselect
+      setSelectedNumbers(selectedNumbers.filter(n => n !== number));
+    } else {
+      // Select only if under limit (max 10)
+      if (selectedNumbers.length < 10) {
+        setSelectedNumbers([...selectedNumbers, number].sort((a, b) => a - b));
+      }
+    }
   };
 
   const handleStartGame = async () => {
@@ -67,78 +77,89 @@ export default function KenoPage() {
         return;
       }
 
-      const response = await startMinesGame(bet, minesCount);
-      setGameId(response.game_id);
-      setIsGameActive(true);
-      setMultiplier(parseFloat(response.current_multiplier));
-      setRevealedTiles([]);
-      setMinePositions([]);
-      setGameOver(false);
-      setNetGain('0.00');
-      
-      // Update user balance
-      setBalance(parseFloat(response.balance));
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.error || 'Failed to start game');
-    }
-  };
+      if (selectedNumbers.length === 0) {
+        setErrorMessage('Please select at least 1 number');
+        return;
+      }
 
-  const handleCashout = async () => {
-    if (!gameId) return;
-    
-    try {
-      setErrorMessage('');
-      const response = await cashout(gameId);
-      setIsGameActive(false);
-      setGameOver(true);
-      setMinePositions(response.mine_positions);
+      setIsGameActive(true);
+      setIsAnimating(true);
+      setCurrentDrawIndex(0);
+
+      const response = await startKenoGame(bet, selectedNumbers);
+      
+      setGameId(response.game_id);
+      setDrawnNumbers(response.drawn_numbers);
+      setMatches(response.matches);
+      setMultiplier(parseFloat(response.multiplier));
       setNetGain(response.net_profit);
       
       // Update user balance
       setBalance(parseFloat(response.balance));
       
-      // Refresh game history
-      fetchGameHistory();
+      // Animate the drawn numbers one by one
+      animateDrawnNumbers(response.drawn_numbers);
+      
     } catch (error: any) {
-      setErrorMessage(error.response?.data?.error || 'Failed to cashout');
+      setErrorMessage(error.response?.data?.error || 'Failed to start game');
+      setIsGameActive(false);
+      setIsAnimating(false);
     }
   };
 
-  const handlePlayClick = () => {
-    if (isGameActive) {
-      handleCashout();
-    } else {
-      handleStartGame();
+  const animateDrawnNumbers = async (drawn: number[]) => {
+    for (let i = 0; i < drawn.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between each number
+      setCurrentDrawIndex(i + 1);
     }
+    
+    // After animation completes
+    setIsAnimating(false);
+    
+    // Refresh game history
+    fetchGameHistory();
   };
 
-  const handleAutoPick = () => {
-    if (!isGameActive || gameOver) return;
+  const handlePlayAgain = () => {
+    setIsGameActive(false);
+    setIsAnimating(false);
+    setDrawnNumbers([]);
+    setMatches(0);
+    setMultiplier(0.00);
+    setNetGain('0.00');
+    setGameId(null);
+    setCurrentDrawIndex(0);
+    // Keep selectedNumbers so player can play again with same numbers
+  };
+
+  const handleClearSelection = () => {
+    if (isGameActive || isAnimating) return;
+    setSelectedNumbers([]);
+  };
+
+  const handleQuickPick = () => {
+    if (isGameActive || isAnimating) return;
     
-    // Get all unrevealed tiles (0-24, excluding already revealed)
-    const unrevealedTiles = Array.from({ length: 25 }, (_, i) => i)
-      .filter(i => !revealedTiles.includes(i));
-    
-    if (unrevealedTiles.length === 0) return;
-    
-    // Pick a random unrevealed tile
-    const randomIndex = Math.floor(Math.random() * unrevealedTiles.length);
-    const randomTile = unrevealedTiles[randomIndex];
-    
-    // Click that tile
-    handleTileClick(randomTile);
+    // Generate 10 random numbers
+    const numbers: number[] = [];
+    while (numbers.length < 10) {
+      const random = Math.floor(Math.random() * 40) + 1;
+      if (!numbers.includes(random)) {
+        numbers.push(random);
+      }
+    }
+    setSelectedNumbers(numbers.sort((a, b) => a - b));
   };
 
   const handleVerifyGame = async () => {
     if (!selectedVerifyGame) return;
     
-    const result = await verify_game(
+    const result = await verify_keno_game(
       selectedVerifyGame.server_seed,
       selectedVerifyGame.server_seed_hash,
       selectedVerifyGame.client_seed,
       selectedVerifyGame.nonce,
-      selectedVerifyGame.mines_count,
-      selectedVerifyGame.mine_positions
+      selectedVerifyGame.drawn_numbers
     );
     
     setVerificationResult(result);
@@ -194,7 +215,7 @@ export default function KenoPage() {
 
   const openStatsModal = async () => {
     try {
-      const statsData = await getMinesStats();
+      const statsData = await getKenoStats();
       setStats(statsData);
       setShowStats(true);
     } catch (error) {
@@ -206,89 +227,21 @@ export default function KenoPage() {
     setShowStats(false);
   };
 
-  const handleTileClick = async (tilePosition: number) => {
-    if (!gameId || !isGameActive || gameOver || revealedTiles.includes(tilePosition)) {
-      return;
-    }
-
-    try {
-      setErrorMessage('');
-      const response = await revealTile(gameId, tilePosition);
-      
-      if (response.game_over) {
-        // Hit a mine or completed game (auto-win or loss)
-        setIsGameActive(false);
-        setGameOver(true);
-        setMinePositions(response.mine_positions || []);
-        
-        if (response.hit_mine) {
-          setNetGain(response.net_profit || '0.00');
-        } else if (response.auto_win) {
-          // Auto-win when all safe tiles revealed
-          setNetGain(response.net_profit || '0.00');
-          setRevealedTiles(response.revealed_tiles || []);
-          setMultiplier(parseFloat(response.current_multiplier || '1.00'));
-        }
-        
-        // Update user balance
-        if (response.balance) {
-          setBalance(parseFloat(response.balance));
-        }
-        
-        // Refresh game history when game ends
-        fetchGameHistory();
-      } else {
-        // Safe tile revealed
-        setRevealedTiles(response.revealed_tiles || []);
-        setMultiplier(parseFloat(response.current_multiplier || '1.00'));
-        
-        const potentialProfit = (parseFloat(response.potential_payout || '0') - parseFloat(betAmount)).toFixed(2);
-        setNetGain(potentialProfit);
-      }
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.error || 'Failed to reveal tile');
-    }
-  };
-
   const fetchGameHistory = async () => {
     if (!user) return;
     
     try {
-      const response = await getGameHistory();
+      const response = await getKenoGameHistory();
       setGameHistory(response.games);
     } catch (error) {
       console.error('Failed to fetch game history:', error);
     }
   };
 
-  // Check for active game on mount
+  // Load game history and seed info on mount
   useEffect(() => {
-    const checkActiveGame = async () => {
-      if (!user) return;
-      
-      try {
-        const response = await getActiveGame();
-        if (response.has_active_game && response.game_id) {
-          const bet = response.bet_amount || '0.00';
-          const mult = parseFloat(response.current_multiplier || '1.00');
-          
-          setGameId(response.game_id);
-          setIsGameActive(true);
-          setBetAmount(bet);
-          setMinesCount(response.mines_count || 3);
-          setRevealedTiles(response.revealed_tiles || []);
-          setMultiplier(mult);
-          
-          const potentialPayout = parseFloat(bet) * mult;
-          const potentialProfit = (potentialPayout - parseFloat(bet)).toFixed(2);
-          setNetGain(potentialProfit);
-        }
-      } catch (error) {
-        console.error('Failed to check for active game:', error);
-      }
-    };
+    if (!user) return;
     
-    checkActiveGame();
     fetchGameHistory();
     fetchSeedInfo();
   }, [user]);
@@ -367,37 +320,31 @@ export default function KenoPage() {
               </button>
             </div>
             <div className={styles.label_container}>
-              <div className={`${styles.label} ${styles.game_label}`}>Mines</div>
-            </div>
-            <select 
-              className={styles.mines_select}
-              value={minesCount}
-              onChange={(e) => setMinesCount(Number(e.target.value))}
-              disabled={isGameActive}
-            >
-              {Array.from({ length: 24 }, (_, i) => i + 1).map((num) => (
-                <option key={num} value={num}>{num}</option>
-              ))}
-            </select>
-            <div className={styles.label_container}>
-              <div className={`${styles.label} ${styles.game_label}`}>Crowns</div>
+              <div className={`${styles.label} ${styles.game_label}`}>Selected Numbers</div>
             </div>
             <div className={styles.crowns_display}>
-              {crownsCount}
+              {selectedNumbers.length} / 10
             </div>
             <button 
               className={`${styles.bet_section_button} ${styles.play_button_green}`}
-              onClick={handlePlayClick}
-              disabled={isGameActive && revealedTiles.length === 0}
+              onClick={isGameActive || isAnimating ? handlePlayAgain : handleStartGame}
+              disabled={(isGameActive && isAnimating) || (!isGameActive && selectedNumbers.length === 0)}
             >
-              {isGameActive ? 'Cashout' : 'Play'}
+              {isGameActive || isAnimating ? 'Play Again' : 'Play'}
             </button>
             <button 
-              className={`${styles.bet_section_button} ${!isGameActive ? styles.disabled : ''}`}
-              disabled={!isGameActive}
-              onClick={handleAutoPick}
+              className={`${styles.bet_section_button} ${(isGameActive || isAnimating) ? styles.disabled : ''}`}
+              disabled={isGameActive || isAnimating}
+              onClick={handleQuickPick}
             >
-              Auto Pick
+              Quick Pick
+            </button>
+            <button 
+              className={`${styles.bet_section_button} ${(isGameActive || isAnimating) ? styles.disabled : ''}`}
+              disabled={isGameActive || isAnimating}
+              onClick={handleClearSelection}
+            >
+              Clear
             </button>
             <div className={styles.label_container}>
               <div className={`${styles.label} ${styles.game_label}`}>
@@ -419,22 +366,22 @@ export default function KenoPage() {
           <div className={styles.mines_container}>
             <div className={styles.keno_board}>
               {Array.from({ length: 40 }, (_, i) => i + 1).map((num) => {
-                const isSelected = revealedTiles.includes(num);
-                const isDrawn = minePositions.includes(num);
-                const isHit = gameOver && isSelected && isDrawn;
+                const isSelected = selectedNumbers.includes(num);
+                const isDrawn = drawnNumbers.slice(0, currentDrawIndex).includes(num);
+                const isHit = isSelected && isDrawn;
                 
                 return (
                   <button
                     key={num}
                     className={`${styles.keno_number} ${
                       isSelected ? styles.keno_selected : ''
-                    } ${isDrawn && gameOver ? styles.keno_drawn : ''} ${
+                    } ${isDrawn ? styles.keno_drawn : ''} ${
                       isHit ? styles.keno_hit : ''
                     }`}
-                    disabled={isGameActive || gameOver}
-                    onClick={() => handleTileClick(num)}
+                    disabled={isGameActive || isAnimating}
+                    onClick={() => handleNumberClick(num)}
                   >
-                    {num}
+                    {isHit ? '👑' : num}
                   </button>
                 );
               })}
@@ -461,11 +408,11 @@ export default function KenoPage() {
             </div>
           ) : (
             <div className={styles.history_table_wrapper}>
-              <div className={styles.history_table_header}>
+                <div className={styles.history_table_header}>
                 <div className={styles.col_game}>Game</div>
                 <div className={styles.col_bet}>Bet</div>
-                <div className={styles.col_mines}>Mines</div>
-                <div className={styles.col_tiles}>Tiles</div>
+                <div className={styles.col_mines}>Spots</div>
+                <div className={styles.col_tiles}>Hits</div>
                 <div className={styles.col_multiplier}>Multiplier</div>
                 <div className={styles.col_payout}>Payout</div>
                 <div className={styles.col_profit}>Net Profit</div>
@@ -486,8 +433,8 @@ export default function KenoPage() {
                         #{game.game_id}
                       </div>
                       <div className={styles.col_bet}>{game.bet_amount} 👑</div>
-                      <div className={styles.col_mines}>{game.mines_count}</div>
-                      <div className={styles.col_tiles}>{game.tiles_revealed}</div>
+                      <div className={styles.col_mines}>{game.spots_selected}</div>
+                      <div className={styles.col_tiles}>{game.matches}</div>
                       <div className={styles.col_multiplier}>{game.multiplier}x</div>
                       <div className={styles.col_payout}>{game.payout} 👑</div>
                       <div className={`${styles.col_profit} ${netProfit >= 0 ? styles.profit : styles.loss}`}>
@@ -571,7 +518,7 @@ export default function KenoPage() {
                 >
                   {gameHistory.map((game) => (
                     <option key={game.game_id} value={game.game_id}>
-                      Game #{game.game_id} - {game.status === 'won' ? `Won ${game.payout}` : `Lost ${game.bet_amount}`} 👑
+                      Game #{game.game_id} - {game.spots_selected} Spots, {game.matches} Hits - {game.status === 'won' ? `Won ${game.payout}` : `Lost ${game.bet_amount}`} 👑
                     </option>
                   ))}
                 </select>
@@ -601,8 +548,13 @@ export default function KenoPage() {
                     </div>
 
                     <div className={styles.seed_item}>
-                      <span className={styles.seed_label}>Mines Count:</span>
-                      <span className={styles.seed_value}>{selectedVerifyGame.mines_count}</span>
+                      <span className={styles.seed_label}>Numbers Selected:</span>
+                      <span className={styles.seed_value}>{selectedVerifyGame.numbers_selected?.join(', ')}</span>
+                    </div>
+
+                    <div className={styles.seed_item}>
+                      <span className={styles.seed_label}>Drawn Numbers:</span>
+                      <span className={styles.seed_value}>{selectedVerifyGame.drawn_numbers?.join(', ')}</span>
                     </div>
                   </div>
 
@@ -625,30 +577,18 @@ export default function KenoPage() {
                       
                       <p className={styles.result_text}>
                         {verificationResult.isValid 
-                          ? 'Regenerated mine positions match the actual game mines.'
-                          : 'Mine positions do not match. This game may have been tampered with.'}
+                          ? 'Regenerated drawn numbers match the actual game results.'
+                          : 'Drawn numbers do not match. This game may have been tampered with.'}
                       </p>
 
-                      <div className={styles.mine_grid}>
-                        <div className={styles.grid_title}>Mine Positions:</div>
-                        <div className={styles.verification_grid}>
-                          {Array.from({ length: 25 }, (_, i) => {
-                            const isMine = selectedVerifyGame.mine_positions.includes(i);
-                            const wasRevealed = selectedVerifyGame.revealed_tiles.includes(i);
-                            
-                            return (
-                              <div
-                                key={i}
-                                className={`${styles.verify_tile} ${
-                                  isMine ? styles.verify_mine : ''
-                                } ${wasRevealed && !isMine ? styles.verify_revealed : ''}`}
-                              >
-                                {isMine ? '💣' : wasRevealed ? '👑' : ''}
-                              </div>
-                            );
-                          })}
+                      {verificationResult.regeneratedDrawnNumbers && (
+                        <div className={styles.mine_grid}>
+                          <div className={styles.grid_title}>Regenerated Drawn Numbers:</div>
+                          <div className={styles.seed_value} style={{ padding: '12px', marginTop: '8px' }}>
+                            {verificationResult.regeneratedDrawnNumbers.join(', ')}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
                 </>
@@ -663,7 +603,7 @@ export default function KenoPage() {
         <div className={styles.modal_overlay} onClick={closeStatsModal}>
           <div className={styles.modal_content} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modal_header}>
-              <h2 className={styles.modal_title}>Mines Statistics</h2>
+              <h2 className={styles.modal_title}>Keno Statistics</h2>
               <button className={styles.modal_close} onClick={closeStatsModal}>✕</button>
             </div>
 
