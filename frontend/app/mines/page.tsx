@@ -2,7 +2,7 @@
 
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from '@/context/UserContext';
 import Image from 'next/image';
@@ -39,6 +39,7 @@ export default function MinesPage() {
   const [currentClientSeed, setCurrentClientSeed] = useState<string>('');
   const [seedGamesPlayed, setSeedGamesPlayed] = useState<number>(0);
   const [nextServerSeedHash, setNextServerSeedHash] = useState<string>('');
+  const verificationResultRef = useRef<HTMLDivElement>(null);
   
   // Calculate crowns: 25 total tiles - mines - revealed tiles
   const crownsCount = 25 - minesCount - revealedTiles.length;
@@ -138,6 +139,11 @@ export default function MinesPage() {
     );
     
     setVerificationResult(result);
+    
+    // Scroll to verification result after a brief delay to allow render
+    setTimeout(() => {
+      verificationResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
   };
 
   const fetchSeedInfo = async () => {
@@ -593,7 +599,7 @@ export default function MinesPage() {
                   </button>
 
                   {verificationResult && (
-                    <div className={`${styles.verification_result} ${verificationResult.isValid ? styles.valid : styles.invalid}`}>
+                    <div ref={verificationResultRef} className={`${styles.verification_result} ${verificationResult.isValid ? styles.valid : styles.invalid}`}>
                       <div className={styles.result_header}>
                         {verificationResult.isValid ? (
                           <><span className={styles.check_icon}>✓</span> Game Verified Successfully!</>
