@@ -666,12 +666,7 @@ export default function MinesPage() {
           <div className={styles.modal_content} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modal_header}>
               <h2 className={styles.modal_title}>Mines Statistics</h2>
-              <button 
-                className={styles.close_button}
-                onClick={closeStatsModal}
-              >
-                ×
-              </button>
+              <button className={styles.modal_close} onClick={closeStatsModal}>✕</button>
             </div>
 
             <div className={styles.stats_container}>

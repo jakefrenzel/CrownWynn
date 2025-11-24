@@ -612,6 +612,30 @@
     color: #fff;
 }
 
+.close_button {
+    background-color: #2f4553;
+    border: 2px solid #3d5564;
+    color: #fff;
+    font-size: 1.8rem;
+    font-weight: 400;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    padding: 0;
+    line-height: 0;
+    flex-shrink: 0;
+}
+
+.close_button:hover {
+    background-color: #ff4444;
+    border-color: #ff4444;
+}
+
 .modal_body {
     padding: 24px;
 }
