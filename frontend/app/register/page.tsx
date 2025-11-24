@@ -246,9 +246,6 @@ export default function RegisterPage() {
               placeholder="Username..." 
               value={username}
               onChange={handleUsernameChange}
-              pattern="[a-zA-Z][a-zA-Z0-9_]{2,19}"
-              title="Username must be 3-20 characters, start with a letter, and contain only letters, numbers, and underscores"
-              minLength={3}
               maxLength={20}
               required 
             />
@@ -262,7 +259,6 @@ export default function RegisterPage() {
                 placeholder="Password..."
                 value={password}
                 onChange={handlePasswordChange}
-                minLength={8}
                 maxLength={20}
                 required />
               <button
