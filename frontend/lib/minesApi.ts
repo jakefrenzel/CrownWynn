@@ -116,7 +116,7 @@ export const rerollSeed = async (): Promise<{ client_seed: string; seed_games_pl
   return response.data;
 };
 
-export const getSeedInfo = async (): Promise<{ client_seed: string; seed_games_played: number }> => {
+export const getSeedInfo = async (): Promise<{ client_seed: string; seed_games_played: number; next_server_seed_hash: string }> => {
   const response = await axiosInstance.get("/api/mines/seed-info/");
   return response.data;
 };

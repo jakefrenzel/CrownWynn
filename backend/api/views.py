@@ -259,9 +259,18 @@ class StartMinesGameView(APIView):
                 # Increment games played on current seed
                 profile.seed_games_played += 1
                 
-                # Generate seeds
-                server_seed = generate_server_seed()
-                server_seed_hash = hash_seed(server_seed)
+                # Use pre-generated server seed if it exists, otherwise generate new one
+                if profile.next_server_seed and profile.next_server_seed_hash:
+                    server_seed = profile.next_server_seed
+                    server_seed_hash = profile.next_server_seed_hash
+                else:
+                    server_seed = generate_server_seed()
+                    server_seed_hash = hash_seed(server_seed)
+                
+                # Generate new server seed for next game
+                next_server_seed = generate_server_seed()
+                profile.next_server_seed = next_server_seed
+                profile.next_server_seed_hash = hash_seed(next_server_seed)
                 
                 # Use provided client_seed, or use profile's current seed, or generate new one
                 if not client_seed:
@@ -524,6 +533,12 @@ class RerollSeedView(APIView):
             profile = request.user.profile
             profile.current_client_seed = new_client_seed
             profile.seed_games_played = 0  # Reset games played on this seed
+            
+            # Generate new server seed for next game
+            next_server_seed = generate_server_seed()
+            profile.next_server_seed = next_server_seed
+            profile.next_server_seed_hash = hash_seed(next_server_seed)
+            
             profile.save()
             
             return Response({
@@ -550,9 +565,17 @@ class GetSeedInfoView(APIView):
                 profile.current_client_seed = generate_client_seed()
                 profile.save()
             
+            # If no next server seed exists, generate both seed and hash
+            if not profile.next_server_seed or not profile.next_server_seed_hash:
+                server_seed = generate_server_seed()
+                profile.next_server_seed = server_seed
+                profile.next_server_seed_hash = hash_seed(server_seed)
+                profile.save()
+            
             return Response({
                 "client_seed": profile.current_client_seed,
-                "seed_games_played": profile.seed_games_played
+                "seed_games_played": profile.seed_games_played,
+                "next_server_seed_hash": profile.next_server_seed_hash
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
