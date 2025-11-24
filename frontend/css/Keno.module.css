@@ -1,0 +1,279 @@
+/* Keno Page Styles - Based on Mines.module.css */
+
+.page {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #0f212e;
+}
+
+.main {
+    display: flex;
+    padding-top: 76px;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.container {
+    display: flex;
+    gap: 1.5rem;
+    padding: 2rem;
+    width: 100%;
+    max-width: 1400px;
+}
+
+.game_panel {
+    flex: 1;
+    background-color: #1a2c38;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.keno_board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.625rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.keno_number {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #213743;
+    border: 2px solid #2f4553;
+    border-radius: 8px;
+    font-family: "Poppins", sans-serif;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #b1bad3;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.keno_number:hover:not(:disabled) {
+    background-color: #2a4552;
+    border-color: #3d5866;
+    transform: scale(1.05);
+}
+
+.keno_number:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.keno_number.selected {
+    background-color: #2b78ca;
+    border-color: #3685d9;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(43, 120, 202, 0.4);
+}
+
+.keno_number.drawn {
+    background-color: #7f8ea3;
+    border-color: #8d9db3;
+}
+
+.keno_number.hit {
+    background-color: #4ade80;
+    border-color: #22c55e;
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(74, 222, 128, 0.5);
+    animation: hitPulse 0.5s ease;
+}
+
+@keyframes hitPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+.control_panel {
+    width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.controls {
+    background-color: #1a2c38;
+    border-radius: 12px;
+    padding: 1.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.bet_section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.label {
+    font-family: "Poppins", sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #b1bad3;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bet_input_container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.bet_input {
+    width: 100%;
+    padding: 0.875rem 3rem 0.875rem 1rem;
+    background-color: #213743;
+    border: 2px solid #2f4553;
+    border-radius: 8px;
+    font-family: "Poppins", sans-serif;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.bet_input:focus {
+    outline: none;
+    border-color: #2b78ca;
+    box-shadow: 0 0 0 3px rgba(43, 120, 202, 0.1);
+}
+
+.bet_input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.crown_icon {
+    position: absolute;
+    right: 1rem;
+    pointer-events: none;
+}
+
+.bet_buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.bet_modifier {
+    padding: 0.625rem;
+    background-color: #213743;
+    border: 2px solid #2f4553;
+    border-radius: 6px;
+    font-family: "Poppins", sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #b1bad3;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bet_modifier:hover:not(:disabled) {
+    background-color: #2a4552;
+    border-color: #3d5866;
+    color: #ffffff;
+}
+
+.bet_modifier:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.info_section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    background-color: #213743;
+    border-radius: 8px;
+}
+
+.info_row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.info_label {
+    font-family: "Poppins", sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #7f8ea3;
+}
+
+.info_value {
+    font-family: "Poppins", sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e8edf2;
+}
+
+.info_value.positive {
+    color: #4ade80;
+}
+
+.error_message {
+    padding: 0.875rem;
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    font-family: "Poppins", sans-serif;
+    font-size: 0.875rem;
+    color: #ff6b6b;
+    text-align: center;
+}
+
+.action_button {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #2b78ca 0%, #1e5fa0 100%);
+    border: none;
+    border-radius: 8px;
+    font-family: "Poppins", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(43, 120, 202, 0.3);
+}
+
+.action_button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #3685d9 0%, #2563a8 100%);
+    box-shadow: 0 6px 16px rgba(43, 120, 202, 0.4);
+    transform: translateY(-2px);
+}
+
+.action_button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.clear_button {
+    width: 100%;
+    padding: 0.875rem;
+    background-color: transparent;
+    border: 2px solid #2f4553;
+    border-radius: 8px;
+    font-family: "Poppins", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #b1bad3;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clear_button:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ff6b6b;
+}

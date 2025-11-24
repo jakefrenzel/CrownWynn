@@ -1,83 +1,153 @@
 .sidebar {
-    display: flex;
     position: fixed;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
     top: 60px;
-    left: -260px; /* hidden off-canvas by default */
-    width: 250px;
+    left: -300px;
+    width: 300px;
     height: calc(100% - 60px);
     background-color: #0f212e;
-    padding: 1rem;
-    transition: left 0.25s ease;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.4);
-    z-index: 1001; /* above backdrop */
-    gap: 1rem;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.6);
+    z-index: 1001;
+    overflow-y: auto;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
+
 .sidebar_open {
     left: 0;
 }
+
 .backdrop {
     position: fixed;
-    top: 60px; /* align with header height */
+    top: 60px;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
-    z-index: 1000; /* below sidebar */
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
 }
-.slideout_section {
+
+.sidebar_content {
+    padding: 2rem 1.5rem;
     display: flex;
-    position: static;
     flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-start;
-    box-sizing: border-box;
-    width: 100%;
-    background-color: #1a2c38;
-    padding: 0.5rem;
-    border-radius: 5px;
-    gap: 0.6rem;
+    gap: 2rem;
 }
-.slideout_button {
+
+.section {
     display: flex;
-    position: static;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    padding: 0.6rem 1rem;
-    font-family: "Poppins", sans-serif;
-    font-weight: 500;
-    font-size: 1rem;
-    color: white;
-    background-color: #2b78ca;
-    border-radius: 6px;
-    border: none;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    transition: background-color 0.2s ease;
+    flex-direction: column;
+    gap: 1rem;
 }
-.support_button {
-    display: flex;
-    position: static;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    padding: 0.6rem 1rem;
+
+.section_title {
     font-family: "Poppins", sans-serif;
-    font-weight: 500;
-    font-size: auto;
-    color: white;
-    background-color: #1a2c38;
-    border-radius: 20px;
-    border: none;
-}
-.menu_label {
-    display: flex;
-    position: static;
-    font-family: "Poppins", sans-serif;
-    font-size: 1.2rem;
+    font-size: 0.85rem;
     font-weight: 600;
+    color: #7f8ea3;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0;
+    padding-left: 0.25rem;
+}
+
+.game_list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.game_card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #1a2c38 0%, #213743 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.game_card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(43, 120, 202, 0.1) 0%, rgba(43, 120, 202, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.game_card:hover::before {
+    opacity: 1;
+}
+
+.game_card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(43, 120, 202, 0.4);
+    box-shadow: 0 8px 24px rgba(43, 120, 202, 0.2);
+}
+
+.game_icon {
+    font-size: 1.75rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    z-index: 1;
+    flex-shrink: 0;
+}
+
+.game_name {
+    font-family: "Poppins", sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e8edf2;
+    z-index: 1;
+    flex: 1;
+}
+
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+    margin: 0.5rem 0;
+}
+
+.support_links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.support_link {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1rem;
+    font-family: "Poppins", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
     color: #b1bad3;
+    background-color: rgba(26, 44, 56, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.support_link:hover {
+    background-color: rgba(26, 44, 56, 0.7);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+.link_icon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.support_link:hover .link_icon {
+    opacity: 1;
 }
