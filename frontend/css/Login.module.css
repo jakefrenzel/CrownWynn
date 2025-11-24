@@ -208,5 +208,84 @@
 .message_container .error_message,
 .message_container .success_message,
 .message_container .loading_message {
+    margin: 0;
+}
+
+/* Password strength indicator */
+.password_strength {
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+    overflow: hidden;
+    animation: expandIn 0.3s ease-out forwards;
+}
+
+.password_strength_exit {
+    animation: expandOut 0.3s ease-out forwards !important;
+}
+
+@keyframes expandIn {
+    from {
+        opacity: 0;
+        max-height: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 150px;
+        margin-top: 0.75rem;
+        margin-bottom: 0.25rem;
+    }
+}
+
+@keyframes expandOut {
+    from {
+        opacity: 1;
+        max-height: 150px;
+        margin-top: 0.75rem;
+        margin-bottom: 0.25rem;
+    }
+    to {
+        opacity: 0;
+        max-height: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+}
+
+.strength_label {
+    font-size: 0.85rem;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.strength_bar_container {
+    width: 100%;
+    height: 6px;
+    background-color: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.strength_bar {
+    height: 100%;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    border-radius: 3px;
+}
+
+.strength_hint {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.old_message_container .error_message,
+.old_message_container .success_message,
+.old_message_container .loading_message {
     margin-top: 0;
 }

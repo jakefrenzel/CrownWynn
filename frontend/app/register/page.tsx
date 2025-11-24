@@ -17,9 +17,21 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [usernameError, setUsernameError] = useState("");
   const [usernameTouched, setUsernameTouched] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<{
+    score: number;
+    label: string;
+    color: string;
+  } | null>(null);
+  const [showStrengthIndicator, setShowStrengthIndicator] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   // Username validation: 3-20 characters, alphanumeric and underscores only, must start with a letter
   const USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{2,19}$/;
+  
+  // Password validation: 8-20 characters, at least one uppercase, one lowercase, one number
+  const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,20}$/;
 
   const validateUsername = (username: string): string | null => {
     if (username.length === 0) {
@@ -43,7 +55,79 @@ export default function RegisterPage() {
     return null;
   };
 
-  // Debounced validation effect
+  const validatePassword = (password: string): string | null => {
+    if (password.length === 0) {
+      return null; // Don't show error for empty field
+    }
+    if (password.length < 8) {
+      return "Password must be at least 8 characters long";
+    }
+    if (password.length > 20) {
+      return "Password must be no more than 20 characters long";
+    }
+    if (!/[a-z]/.test(password)) {
+      return "Password must contain at least one lowercase letter";
+    }
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter";
+    }
+    if (!/\d/.test(password)) {
+      return "Password must contain at least one number";
+    }
+    return null;
+  };
+
+  const calculatePasswordStrength = (password: string) => {
+    if (password.length === 0) {
+      if (showStrengthIndicator) {
+        setIsExiting(true);
+        setTimeout(() => {
+          setShowStrengthIndicator(false);
+          setIsExiting(false);
+          setPasswordStrength(null);
+        }, 300); // Match animation duration
+      }
+      return;
+    }
+
+    if (!showStrengthIndicator) {
+      setShowStrengthIndicator(true);
+    }
+
+    let score = 0;
+    
+    // Length check
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    
+    // Character variety
+    if (/[a-z]/.test(password)) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++; // Special characters
+    
+    // Determine strength
+    let label = '';
+    let color = '';
+    
+    if (score <= 2) {
+      label = 'Weak';
+      color = '#ff4444';
+    } else if (score <= 4) {
+      label = 'Fair';
+      color = '#ff9800';
+    } else if (score === 5) {
+      label = 'Good';
+      color = '#4ade80';
+    } else {
+      label = 'Strong';
+      color = '#22c55e';
+    }
+    
+    setPasswordStrength({ score, label, color });
+  };
+
+  // Debounced validation effect for username
   useEffect(() => {
     if (!usernameTouched) return;
     
@@ -54,6 +138,27 @@ export default function RegisterPage() {
 
     return () => clearTimeout(timer);
   }, [username, usernameTouched]);
+
+  // Debounced validation effect for password
+  useEffect(() => {
+    if (!passwordTouched) return;
+    
+    const timer = setTimeout(() => {
+      const error = validatePassword(password);
+      setPasswordError(error || "");
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [password, passwordTouched]);
+
+  // Debounced password strength calculation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      calculatePasswordStrength(password);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [password]);
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -69,15 +174,35 @@ export default function RegisterPage() {
     setUsernameError(error || "");
   };
 
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassword(value);
+    if (!passwordTouched) setPasswordTouched(true);
+    if (passwordError) setPasswordError("");
+  };
+
+  const handlePasswordBlur = () => {
+    setPasswordTouched(true);
+    const error = validatePassword(password);
+    setPasswordError(error || "");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
     // Validate username
-    const usernameError = validateUsername(username);
-    if (usernameError) {
-      setError(usernameError);
+    const usernameValidationError = validateUsername(username);
+    if (usernameValidationError) {
+      setError(usernameValidationError);
+      return;
+    }
+
+    // Validate password
+    const passwordValidationError = validatePassword(password);
+    if (passwordValidationError) {
+      setError(passwordValidationError);
       return;
     }
 
@@ -153,7 +278,10 @@ export default function RegisterPage() {
                 name="password" 
                 placeholder="Password..."
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={handlePasswordChange}
+                onBlur={handlePasswordBlur}
+                minLength={8}
+                maxLength={20}
                 required />
               <button
                 type="button"
@@ -179,6 +307,24 @@ export default function RegisterPage() {
                 )}
               </button>
             </div>
+            
+            {passwordTouched && showStrengthIndicator && passwordStrength && (
+              <div className={`${styles.password_strength} ${isExiting ? styles.password_strength_exit : ''}`}>
+                <div className={styles.strength_label}>Password Strength: <span style={{ color: passwordStrength.color }}>{passwordStrength.label}</span></div>
+                <div className={styles.strength_bar_container}>
+                  <div 
+                    className={styles.strength_bar} 
+                    style={{ 
+                      width: `${(passwordStrength.score / 6) * 100}%`,
+                      backgroundColor: passwordStrength.color 
+                    }}
+                  />
+                </div>
+                {passwordStrength.score < 6 && (
+                  <div className={styles.strength_hint}>💡 Tip: Add special characters (!@#$%^&*) for a stronger password</div>
+                )}
+              </div>
+            )}
             
             <label className={`${styles.label} ${styles.spacing}`} htmlFor="confirmPassword">Confirm Password</label>
             <div className={styles.password_wrapper}>
@@ -217,7 +363,8 @@ export default function RegisterPage() {
             
             {/* Reserved space for messages to prevent layout shift */}
             <div className={styles.message_container}>
-              {usernameError && <div className={styles.error_message}>{usernameError}</div>}
+              {!loading && !error && !success && usernameError && <div className={styles.error_message}>{usernameError}</div>}
+              {!loading && !error && !success && passwordError && <div className={styles.error_message}>{passwordError}</div>}
               {loading && <div className={styles.loading_message}>Creating account...</div>}
               {error && <div className={styles.error_message}>{error}</div>}
               {success && <div className={styles.success_message}>{success}</div>}
