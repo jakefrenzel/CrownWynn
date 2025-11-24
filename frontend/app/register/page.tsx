@@ -16,9 +16,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [usernameError, setUsernameError] = useState("");
-  const [usernameTouched, setUsernameTouched] = useState(false);
   const [passwordError, setPasswordError] = useState("");
-  const [passwordTouched, setPasswordTouched] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<{
     score: number;
     label: string;
@@ -26,6 +24,10 @@ export default function RegisterPage() {
   } | null>(null);
   const [showStrengthIndicator, setShowStrengthIndicator] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [showUsernameError, setShowUsernameError] = useState(false);
+  const [showPasswordError, setShowPasswordError] = useState(false);
+  const [isUsernameErrorExiting, setIsUsernameErrorExiting] = useState(false);
+  const [isPasswordErrorExiting, setIsPasswordErrorExiting] = useState(false);
 
   // Username validation: 3-20 characters, alphanumeric and underscores only, must start with a letter
   const USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{2,19}$/;
@@ -127,64 +129,43 @@ export default function RegisterPage() {
     setPasswordStrength({ score, label, color });
   };
 
-  // Debounced validation effect for username
+  // Clear errors when user types (no validation during typing)
   useEffect(() => {
-    if (!usernameTouched) return;
-    
-    const timer = setTimeout(() => {
-      const error = validateUsername(username);
-      setUsernameError(error || "");
-    }, 500); // Wait 500ms after user stops typing
+    if (showUsernameError && username.length > 0) {
+      setIsUsernameErrorExiting(true);
+      setTimeout(() => {
+        setShowUsernameError(false);
+        setIsUsernameErrorExiting(false);
+        setUsernameError("");
+      }, 300);
+    }
+  }, [username]);
 
-    return () => clearTimeout(timer);
-  }, [username, usernameTouched]);
-
-  // Debounced validation effect for password
+  // Clear errors when user types (no validation during typing)
   useEffect(() => {
-    if (!passwordTouched) return;
-    
-    const timer = setTimeout(() => {
-      const error = validatePassword(password);
-      setPasswordError(error || "");
-    }, 500);
+    if (showPasswordError && password.length > 0) {
+      setIsPasswordErrorExiting(true);
+      setTimeout(() => {
+        setShowPasswordError(false);
+        setIsPasswordErrorExiting(false);
+        setPasswordError("");
+      }, 300);
+    }
+  }, [password]);
 
-    return () => clearTimeout(timer);
-  }, [password, passwordTouched]);
-
-  // Debounced password strength calculation
+  // Real-time password strength calculation
   useEffect(() => {
-    const timer = setTimeout(() => {
-      calculatePasswordStrength(password);
-    }, 500);
-
-    return () => clearTimeout(timer);
+    calculatePasswordStrength(password);
   }, [password]);
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUsername(value);
-    if (!usernameTouched) setUsernameTouched(true);
-    // Clear error immediately while typing
-    if (usernameError) setUsernameError("");
-  };
-
-  const handleUsernameBlur = () => {
-    setUsernameTouched(true);
-    const error = validateUsername(username);
-    setUsernameError(error || "");
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPassword(value);
-    if (!passwordTouched) setPasswordTouched(true);
-    if (passwordError) setPasswordError("");
-  };
-
-  const handlePasswordBlur = () => {
-    setPasswordTouched(true);
-    const error = validatePassword(password);
-    setPasswordError(error || "");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -195,14 +176,16 @@ export default function RegisterPage() {
     // Validate username
     const usernameValidationError = validateUsername(username);
     if (usernameValidationError) {
-      setError(usernameValidationError);
+      setUsernameError(usernameValidationError);
+      setShowUsernameError(true);
       return;
     }
 
     // Validate password
     const passwordValidationError = validatePassword(password);
     if (passwordValidationError) {
-      setError(passwordValidationError);
+      setPasswordError(passwordValidationError);
+      setShowPasswordError(true);
       return;
     }
 
@@ -263,13 +246,13 @@ export default function RegisterPage() {
               placeholder="Username..." 
               value={username}
               onChange={handleUsernameChange}
-              onBlur={handleUsernameBlur}
               pattern="[a-zA-Z][a-zA-Z0-9_]{2,19}"
               title="Username must be 3-20 characters, start with a letter, and contain only letters, numbers, and underscores"
               minLength={3}
               maxLength={20}
               required 
             />
+            
             <label className={`${styles.label} ${styles.spacing}`} htmlFor="password">Password</label>
             <div className={styles.password_wrapper}>
               <input 
@@ -279,7 +262,6 @@ export default function RegisterPage() {
                 placeholder="Password..."
                 value={password}
                 onChange={handlePasswordChange}
-                onBlur={handlePasswordBlur}
                 minLength={8}
                 maxLength={20}
                 required />
@@ -308,7 +290,7 @@ export default function RegisterPage() {
               </button>
             </div>
             
-            {passwordTouched && showStrengthIndicator && passwordStrength && (
+            {showStrengthIndicator && passwordStrength && (
               <div className={`${styles.password_strength} ${isExiting ? styles.password_strength_exit : ''}`}>
                 <div className={styles.strength_label}>Password Strength: <span style={{ color: passwordStrength.color }}>{passwordStrength.label}</span></div>
                 <div className={styles.strength_bar_container}>
@@ -361,10 +343,10 @@ export default function RegisterPage() {
               </button>
             </div>
             
-            {/* Reserved space for messages to prevent layout shift */}
+            {/* General form messages (reserved space) */}
             <div className={styles.message_container}>
-              {!loading && !error && !success && usernameError && <div className={styles.error_message}>{usernameError}</div>}
-              {!loading && !error && !success && passwordError && <div className={styles.error_message}>{passwordError}</div>}
+              {showUsernameError && usernameError && <div className={styles.error_message}>{usernameError}</div>}
+              {showPasswordError && passwordError && <div className={styles.error_message}>{passwordError}</div>}
               {loading && <div className={styles.loading_message}>Creating account...</div>}
               {error && <div className={styles.error_message}>{error}</div>}
               {success && <div className={styles.success_message}>{success}</div>}

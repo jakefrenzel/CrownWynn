@@ -195,9 +195,9 @@
     font-weight: 400;
 }
 
-/* Message container with reserved space */
+/* Message container with reserved space for general errors */
 .message_container {
-    height: 3.5rem;
+    height: 2.5rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -209,6 +209,19 @@
 .message_container .success_message,
 .message_container .loading_message {
     margin: 0;
+}
+
+/* Inline error messages with smooth animations */
+.inline_error {
+    color: #ff4444;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    overflow: hidden;
+    animation: expandIn 0.3s ease-out forwards;
+}
+
+.inline_error_exit {
+    animation: expandOut 0.3s ease-out forwards !important;
 }
 
 /* Password strength indicator */
