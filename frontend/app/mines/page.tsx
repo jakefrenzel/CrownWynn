@@ -15,6 +15,7 @@ import {
   getGameHistory,
   getSeedInfo,
   rerollSeed,
+  getMinesStats,
   type StartGameResponse,
 } from '@/lib/minesApi';
 import { verify_game } from '@/lib/minesVerification';
@@ -40,6 +41,8 @@ export default function MinesPage() {
   const [seedGamesPlayed, setSeedGamesPlayed] = useState<number>(0);
   const [nextServerSeedHash, setNextServerSeedHash] = useState<string>('');
   const verificationResultRef = useRef<HTMLDivElement>(null);
+  const [showStats, setShowStats] = useState<boolean>(false);
+  const [stats, setStats] = useState<any>(null);
   
   // Calculate crowns: 25 total tiles - mines - revealed tiles
   const crownsCount = 25 - minesCount - revealedTiles.length;
@@ -189,6 +192,20 @@ export default function MinesPage() {
     setVerificationResult(null);
   };
 
+  const openStatsModal = async () => {
+    try {
+      const statsData = await getMinesStats();
+      setStats(statsData);
+      setShowStats(true);
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const closeStatsModal = () => {
+    setShowStats(false);
+  };
+
   const handleTileClick = async (tilePosition: number) => {
     if (!gameId || !isGameActive || gameOver || revealedTiles.includes(tilePosition)) {
       return;
@@ -304,7 +321,7 @@ export default function MinesPage() {
   // Main page content for authenticated users
   return (
     <div>
-      <Header />
+      <Header onStatsClick={openStatsModal} />
       <Sidebar />
       
       <section className={styles.section}>
@@ -431,7 +448,7 @@ export default function MinesPage() {
         <div className={styles.history_section}>
           <div className={styles.history_header}>
             <h2 className={styles.history_title}>Game History</h2>
-            <button 
+            <button
               className={styles.provably_fair_button}
               onClick={openProvablyFairModal}
               disabled={gameHistory.length === 0}
@@ -638,6 +655,81 @@ export default function MinesPage() {
                   )}
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Modal */}
+      {showStats && stats && (
+        <div className={styles.modal_overlay} onClick={closeStatsModal}>
+          <div className={styles.modal_content} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modal_header}>
+              <h2 className={styles.modal_title}>Mines Statistics</h2>
+              <button 
+                className={styles.close_button}
+                onClick={closeStatsModal}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className={styles.stats_container}>
+              <div className={styles.stats_grid}>
+                <div className={styles.stat_card}>
+                  <div className={styles.stat_label}>Games Played</div>
+                  <div className={styles.stat_value}>{stats.games_played}</div>
+                </div>
+                
+                <div className={styles.stat_card}>
+                  <div className={styles.stat_label}>Win Rate</div>
+                  <div className={styles.stat_value}>{stats.win_rate}%</div>
+                </div>
+                
+                <div className={styles.stat_card}>
+                  <div className={styles.stat_label}>Games Won</div>
+                  <div className={styles.stat_value_success}>{stats.games_won}</div>
+                </div>
+                
+                <div className={styles.stat_card}>
+                  <div className={styles.stat_label}>Games Lost</div>
+                  <div className={styles.stat_value_danger}>{stats.games_lost}</div>
+                </div>
+                
+                <div className={styles.stat_card}>
+                  <div className={styles.stat_label}>Total Wagered</div>
+                  <div className={styles.stat_value}>{stats.total_wagered} 👑</div>
+                </div>
+                
+                <div className={styles.stat_card}>
+                  <div className={styles.stat_label}>Total Profit</div>
+                  <div className={parseFloat(stats.total_profit) >= 0 ? styles.stat_value_success : styles.stat_value_danger}>
+                    {parseFloat(stats.total_profit) >= 0 ? '+' : ''}{stats.total_profit} 👑
+                  </div>
+                </div>
+                
+                <div className={styles.stat_card}>
+                  <div className={styles.stat_label}>Biggest Win</div>
+                  <div className={styles.stat_value_success}>{stats.biggest_win} 👑</div>
+                </div>
+                
+                <div className={styles.stat_card}>
+                  <div className={styles.stat_label}>Average Bet</div>
+                  <div className={styles.stat_value}>{stats.average_bet} 👑</div>
+                </div>
+                
+                <div className={styles.stat_card}>
+                  <div className={styles.stat_label}>Current Streak</div>
+                  <div className={stats.current_streak > 0 ? styles.stat_value_success : stats.current_streak < 0 ? styles.stat_value_danger : styles.stat_value}>
+                    {stats.current_streak > 0 ? `${stats.current_streak} Wins 🔥` : stats.current_streak < 0 ? `${Math.abs(stats.current_streak)} Losses` : '0'}
+                  </div>
+                </div>
+                
+                <div className={styles.stat_card}>
+                  <div className={styles.stat_label}>Best Streak</div>
+                  <div className={styles.stat_value_success}>{stats.best_streak} Wins 🏆</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

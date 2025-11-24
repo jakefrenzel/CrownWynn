@@ -6,7 +6,11 @@ import { useUI } from "@/context/UIContext";
 import { useUser, formatBalanceDisplay } from "@/context/UserContext";
 import Link from "next/link";
 
-export default function Header() {
+interface HeaderProps {
+    onStatsClick?: () => void;
+}
+
+export default function Header({ onStatsClick }: HeaderProps = {}) {
     const { user, balance, setBalance, logout } = useUser(); // ✅ get logout from context
     const [loading, setLoading] = useState(true);    // ✅ local loading only
     const { toggleMenu } = useUI();
@@ -73,9 +77,16 @@ export default function Header() {
 
             <div className={`${styles.header_segments} ${styles.header_button_container}`}>
                 {user ? (
-                    <button onClick={handleLogout} className={styles.header_button}>
-                        Logout
-                    </button>
+                    <>
+                        {onStatsClick && (
+                            <button onClick={onStatsClick} className={styles.header_button}>
+                                Stats
+                            </button>
+                        )}
+                        <button onClick={handleLogout} className={styles.header_button}>
+                            Logout
+                        </button>
+                    </>
                 ) : (
                     <>
                         <Link href="/login" className={styles.login_button}>Login</Link>
