@@ -514,13 +514,13 @@ export default function MinesPage() {
                   </div>
 
                   <div className={styles.seed_item}>
-                    <span className={styles.seed_label}>Games Played:</span>
-                    <span className={styles.seed_value}>{seedGamesPlayed}</span>
+                    <span className={styles.seed_label}>Next Server Seed Hash:</span>
+                    <span className={styles.seed_value}>{nextServerSeedHash || 'Loading...'}</span>
                   </div>
 
                   <div className={styles.seed_item}>
-                    <span className={styles.seed_label}>Next Server Seed Hash:</span>
-                    <span className={styles.seed_value}>{nextServerSeedHash || 'Loading...'}</span>
+                    <span className={styles.seed_label}>Games Played:</span>
+                    <span className={styles.seed_value}>{seedGamesPlayed}</span>
                   </div>
                 </div>
 
