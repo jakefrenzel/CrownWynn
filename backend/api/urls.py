@@ -9,6 +9,7 @@ from api.views import (
     CSRFTokenView,
     CurrentUserView,
     ClaimWelcomeBonusView,
+    ClaimDailyRewardView,
     LogoutView,
     StartMinesGameView,
     RevealTileView,
@@ -40,6 +41,7 @@ urlpatterns = [
     path("user/me/", CurrentUserView.as_view(), name="current-user"),
     path("user/balance/", UserBalanceView.as_view(), name="user-balance"),
     path("user/claim-welcome-bonus/", ClaimWelcomeBonusView.as_view(), name="claim-welcome-bonus"),
+    path("user/claim-daily-reward/", ClaimDailyRewardView.as_view(), name="claim-daily-reward"),
     path("logout/", LogoutView.as_view(), name="logout"),
 
     # Mines game endpoints

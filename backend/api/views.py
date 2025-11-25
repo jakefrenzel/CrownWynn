@@ -167,6 +167,64 @@ class ClaimWelcomeBonusView(APIView):
             "welcome_bonus_claimed": profile.welcome_bonus_claimed
         }, status=status.HTTP_200_OK)
 
+class ClaimDailyRewardView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Check if user can claim daily reward"""
+        profile = request.user.profile
+        
+        can_claim = True
+        time_remaining = 0
+        
+        if profile.last_daily_claim:
+            time_since_claim = timezone.now() - profile.last_daily_claim
+            hours_since_claim = time_since_claim.total_seconds() / 3600
+            
+            if hours_since_claim < 12:
+                can_claim = False
+                time_remaining = int((12 * 3600) - time_since_claim.total_seconds())
+        
+        return Response({
+            "can_claim": can_claim,
+            "time_remaining": time_remaining,
+            "last_claim": profile.last_daily_claim,
+        }, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        """Claim daily reward"""
+        profile = request.user.profile
+        
+        # Check if 12 hours have passed since last claim
+        if profile.last_daily_claim:
+            time_since_claim = timezone.now() - profile.last_daily_claim
+            hours_since_claim = time_since_claim.total_seconds() / 3600
+            
+            if hours_since_claim < 12:
+                time_remaining = int((12 * 3600) - time_since_claim.total_seconds())
+                return Response(
+                    {
+                        "error": "Daily reward not available yet",
+                        "time_remaining": time_remaining
+                    }, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Use transaction to ensure atomicity
+        with transaction.atomic():
+            # Add the daily reward to balance
+            daily_amount = Decimal('250.00')
+            profile.balance += daily_amount
+            profile.last_daily_claim = timezone.now()
+            profile.save()
+        
+        return Response({
+            "message": "Daily reward claimed successfully!",
+            "reward_amount": daily_amount,
+            "new_balance": profile.balance,
+            "next_claim_at": profile.last_daily_claim
+        }, status=status.HTTP_200_OK)
+
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
     

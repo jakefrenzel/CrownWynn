@@ -5,6 +5,7 @@ import api from "@/lib/axiosInstance";
 import { useUI } from "@/context/UIContext";
 import { useUser, formatBalanceDisplay } from "@/context/UserContext";
 import Link from "next/link";
+import { checkDailyReward, claimDailyReward } from '@/lib/dailyRewardApi';
 
 interface HeaderProps {
     onStatsClick?: () => void;
@@ -14,6 +15,10 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
     const { user, balance, setBalance, logout } = useUser(); // ✅ get logout from context
     const [loading, setLoading] = useState(true);    // ✅ local loading only
     const { toggleMenu } = useUI();
+    const [canClaim, setCanClaim] = useState(false);
+    const [timeRemaining, setTimeRemaining] = useState(0);
+    const [showDailyModal, setShowDailyModal] = useState(false);
+    const [dailyMessage, setDailyMessage] = useState('');
 
     const handleLogout = async () => {
         await logout();
@@ -45,6 +50,58 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
 
         fetchBalance();
     }, [user, setBalance]);
+
+    useEffect(() => {
+        const checkDaily = async () => {
+            if (!user) return;
+            try {
+                const status = await checkDailyReward();
+                setCanClaim(status.can_claim);
+                setTimeRemaining(status.time_remaining);
+            } catch (err) {
+                console.warn('Daily reward check failed', err);
+            }
+        };
+
+        checkDaily();
+        const interval = setInterval(checkDaily, 60000); // Check every minute
+        return () => clearInterval(interval);
+    }, [user]);
+
+    useEffect(() => {
+        if (timeRemaining <= 0) return;
+        const timer = setInterval(() => {
+            setTimeRemaining(prev => {
+                if (prev <= 1) {
+                    setCanClaim(true);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [timeRemaining]);
+
+    const handleClaimDaily = async () => {
+        try {
+            const response = await claimDailyReward();
+            setDailyMessage(response.message);
+            setShowDailyModal(true);
+            setCanClaim(false);
+            setTimeRemaining(12 * 60 * 60);
+            setBalance(parseFloat(response.new_balance));
+        } catch (err: any) {
+            setDailyMessage(err.response?.data?.error || 'Failed to claim daily reward');
+            setShowDailyModal(true);
+        }
+    };
+
+    const formatTimeRemaining = (seconds: number): string => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        return `${hours}h ${minutes}m ${secs}s`;
+    };
 
     return (
         <header className={styles.header}>
@@ -83,6 +140,17 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
                                 Stats
                             </button>
                         )}
+                        <button 
+                            onClick={handleClaimDaily} 
+                            className={styles.header_button}
+                            disabled={!canClaim}
+                            style={{
+                                opacity: canClaim ? 1 : 0.6,
+                                cursor: canClaim ? 'pointer' : 'not-allowed'
+                            }}
+                        >
+                            {canClaim ? 'Daily' : formatTimeRemaining(timeRemaining)}
+                        </button>
                         <button onClick={handleLogout} className={styles.header_button}>
                             Logout
                         </button>
@@ -94,6 +162,20 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
                     </>
                 )}
             </div>
+
+            {showDailyModal && (
+                <div className={styles.modal_overlay} onClick={() => setShowDailyModal(false)}>
+                    <div className={styles.modal_content} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modal_header}>
+                            <h2>Daily Reward</h2>
+                            <button className={styles.modal_close} onClick={() => setShowDailyModal(false)}>✕</button>
+                        </div>
+                        <div className={styles.modal_body}>
+                            <p>{dailyMessage}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </header>
     );
 }
