@@ -1063,3 +1063,65 @@ class KenoStatsView(APIView):
             return Response({
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class RecentWinsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            # Get recent wins from all users (last 50 winning games)
+            recent_wins = KenoGame.objects.filter(
+                status='won'
+            ).select_related('user').order_by('-created_at')[:50]
+            
+            wins_data = []
+            for game in recent_wins:
+                wins_data.append({
+                    'username': game.user.username,
+                    'bet_amount': str(game.bet_amount),
+                    'multiplier': str(game.current_multiplier),
+                    'payout': str(game.payout_amount),
+                    'net_profit': str(game.net_profit),
+                    'created_at': game.created_at.isoformat()
+                })
+            
+            return Response({
+                'recent_wins': wins_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class MinesRecentWinsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            # Get recent wins from all users (last 50 winning Mines games)
+            recent_wins = MinesGame.objects.filter(
+                status='cashed_out'
+            ).select_related('user').order_by('-completed_at')[:50]
+            
+            wins_data = []
+            for game in recent_wins:
+                wins_data.append({
+                    'username': game.user.username,
+                    'bet_amount': str(game.bet_amount),
+                    'multiplier': str(game.current_multiplier),
+                    'payout': str(game.payout_amount),
+                    'net_profit': str(game.net_profit),
+                    'created_at': game.completed_at.isoformat()
+                })
+            
+            return Response({
+                'recent_wins': wins_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

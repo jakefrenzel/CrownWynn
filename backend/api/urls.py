@@ -22,6 +22,8 @@ from api.views import (
     KenoHistoryView,
     ActiveKenoGameView,
     KenoStatsView,
+    RecentWinsView,
+    MinesRecentWinsView,
 )
 
 urlpatterns = [
@@ -49,10 +51,12 @@ urlpatterns = [
     path("mines/history/", GameHistoryView.as_view(), name="mines-history"),
     path("mines/active/", ActiveGameView.as_view(), name="mines-active"),
     path("mines/stats/", MinesStatsView.as_view(), name="mines-stats"),
+    path("mines/recent-wins/", MinesRecentWinsView.as_view(), name="mines-recent-wins"),
 
     # Keno game endpoints
     path("keno/start/", StartKenoGameView.as_view(), name="keno-start"),
     path("keno/history/", KenoHistoryView.as_view(), name="keno-history"),
     path("keno/active/", ActiveKenoGameView.as_view(), name="keno-active"),
     path("keno/stats/", KenoStatsView.as_view(), name="keno-stats"),
+    path("keno/recent-wins/", RecentWinsView.as_view(), name="recent-wins"),
 ]
