@@ -164,7 +164,14 @@ const handleThanks = async () => {
               >
                 Mines
               </div>
-              <div className={`${styles.gameButton} ${styles.comingSoon}`}>Coming</div>
+              <div 
+                className={styles.gameButton} 
+                id="game-keno"
+                onClick={() => router.push('/keno')}
+                style={{ cursor: 'pointer' }}
+              >
+                Keno
+              </div>
               <div className={`${styles.gameButton} ${styles.comingSoon}`}>Coming</div>
               <div className={`${styles.gameButton} ${styles.comingSoon}`}>Coming</div>
               <div className={`${styles.gameButton} ${styles.comingSoon}`}>Coming</div>
