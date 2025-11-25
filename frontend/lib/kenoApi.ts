@@ -94,3 +94,21 @@ export const getKenoStats = async (): Promise<KenoStatsResponse> => {
   const response = await axiosInstance.get("/api/keno/stats/");
   return response.data;
 };
+
+export interface RecentWinItem {
+  username: string;
+  bet_amount: string;
+  multiplier: string;
+  payout: string;
+  net_profit: string;
+  created_at: string;
+}
+
+export interface RecentWinsResponse {
+  recent_wins: RecentWinItem[];
+}
+
+export const getRecentWins = async (): Promise<RecentWinsResponse> => {
+  const response = await axiosInstance.get("/api/keno/recent-wins/");
+  return response.data;
+};

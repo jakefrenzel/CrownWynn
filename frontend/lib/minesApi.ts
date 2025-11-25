@@ -148,3 +148,21 @@ export const getMinesStats = async (): Promise<MinesStatsResponse> => {
   const response = await axiosInstance.get("/api/mines/stats/");
   return response.data;
 };
+
+export interface MinesRecentWinItem {
+  username: string;
+  bet_amount: string;
+  multiplier: string;
+  payout: string;
+  net_profit: string;
+  created_at: string;
+}
+
+export interface MinesRecentWinsResponse {
+  recent_wins: MinesRecentWinItem[];
+}
+
+export const getMinesRecentWins = async (): Promise<MinesRecentWinsResponse> => {
+  const response = await axiosInstance.get("/api/mines/recent-wins/");
+  return response.data;
+};

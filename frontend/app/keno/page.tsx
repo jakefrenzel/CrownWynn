@@ -12,7 +12,9 @@ import {
   getActiveKenoGame,
   getKenoGameHistory,
   getKenoStats,
+  getRecentWins,
   type StartKenoGameResponse,
+  type RecentWinItem,
 } from '@/lib/kenoApi';
 import { verify_keno_game } from '@/lib/kenoVerification';
 import { getSeedInfo, rerollSeed } from '@/lib/minesApi';
@@ -43,6 +45,7 @@ export default function KenoPage() {
   const [stats, setStats] = useState<any>(null);
   const [currentDrawIndex, setCurrentDrawIndex] = useState<number>(0);
   const [quickPickAmount, setQuickPickAmount] = useState<number>(10);
+  const [recentWins, setRecentWins] = useState<RecentWinItem[]>([]);
 
   const handleHalfBet = () => {
     const current = parseFloat(betAmount) || 0;
@@ -249,12 +252,33 @@ export default function KenoPage() {
     }
   };
 
+  const fetchRecentWins = async () => {
+    try {
+      const response = await getRecentWins();
+      setRecentWins(response.recent_wins);
+    } catch (error) {
+      console.error('Failed to fetch recent wins:', error);
+    }
+  };
+
   // Load game history and seed info on mount
   useEffect(() => {
     if (!user) return;
     
     fetchGameHistory();
     fetchSeedInfo();
+    fetchRecentWins();
+  }, [user]);
+
+  // Auto-refresh recent wins every 5 seconds
+  useEffect(() => {
+    if (!user) return;
+    
+    const interval = setInterval(() => {
+      fetchRecentWins();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, [user]);
 
   // Redirect to login if not authenticated
@@ -500,6 +524,62 @@ export default function KenoPage() {
                     </div>
                   );
                 })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Wins Section */}
+        <div className={styles.history_section}>
+          <div className={styles.history_header}>
+            <h2 className={styles.history_title}>Recent Wins</h2>
+          </div>
+
+          {recentWins.length === 0 ? (
+            <div className={styles.no_history}>
+              <p>No recent wins yet. Be the first!</p>
+            </div>
+          ) : (
+            <div className={styles.history_table_wrapper}>
+              <div className={styles.recent_wins_header}>
+                <div className={styles.col_game}>Player</div>
+                <div className={styles.col_bet}>Bet</div>
+                <div className={styles.col_multiplier}>Multiplier</div>
+                <div className={styles.col_payout}>Payout</div>
+                <div className={styles.col_profit}>Profit</div>
+                <div className={styles.col_date}>Date</div>
+              </div>
+              <div className={styles.recent_wins_scroll}>
+                <div className={styles.history_list}>
+                  {recentWins.map((win, index) => (
+                    <div key={`${win.username}-${win.created_at}-${index}`} className={styles.recent_wins_row}>
+                      <div className={styles.col_game}>
+                        <span className={`${styles.status_badge} ${styles.won}`}>
+                          ✓
+                        </span>
+                        {win.username}
+                      </div>
+                      <div className={styles.col_bet}>{win.bet_amount} 👑</div>
+                      <div className={styles.col_multiplier}>{win.multiplier}x</div>
+                      <div className={styles.col_payout}>{win.payout} 👑</div>
+                      <div className={`${styles.col_profit} ${styles.profit}`}>
+                        +{win.net_profit} 👑
+                      </div>
+                      <div className={styles.col_date}>
+                        {(() => {
+                          const parts = new Date(win.created_at).toLocaleString('en-US', {
+                            month: 'numeric',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                          }).split(', ');
+                          return `${parts[0]} ${parts[1].replace(' ', '').toLowerCase()}`;
+                        })()}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
