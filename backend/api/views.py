@@ -1124,7 +1124,7 @@ class KenoStatsView(APIView):
 
 
 class RecentWinsView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get(self, request):
         try:
@@ -1155,13 +1155,13 @@ class RecentWinsView(APIView):
 
 
 class MinesRecentWinsView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get(self, request):
         try:
             # Get recent wins from all users (last 50 winning Mines games)
             recent_wins = MinesGame.objects.filter(
-                status='cashed_out'
+                status='won'
             ).select_related('user').order_by('-completed_at')[:50]
             
             wins_data = []

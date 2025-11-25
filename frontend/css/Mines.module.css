@@ -7,7 +7,8 @@
     width: 100vw;
     min-height: calc(100vh - 60px);
     overflow-y: auto;
-    padding: 40px 0;
+    padding: 0 0 40px 0;
+    gap: 40px;
 }
 
 .game_container {
@@ -16,6 +17,7 @@
     align-items: stretch;
     width: 80vw;
     height: 70vh;
+    margin-top: 40px;
 }
 
 .bet_container {
@@ -449,7 +451,7 @@
 .history_section {
     width: 80vw;
     max-width: 1400px;
-    margin: 30px auto;
+    margin: 0 auto;
     background-color: #213743;
     border-radius: 6px;
     padding: 24px;

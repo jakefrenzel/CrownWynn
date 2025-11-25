@@ -180,12 +180,14 @@ export default function MinesPage() {
     }
   };
 
-  const openProvablyFairModal = () => {
+  const openProvablyFairModal = async () => {
     if (gameHistory.length > 0) {
       setSelectedVerifyGame(gameHistory[0]);
+    } else {
+      setSelectedVerifyGame(null);
     }
     setVerificationResult(null);
-    fetchSeedInfo();
+    await fetchSeedInfo();
     setShowProvablyFair(true);
   };
 
@@ -475,7 +477,6 @@ export default function MinesPage() {
             <button
               className={styles.provably_fair_button}
               onClick={openProvablyFairModal}
-              disabled={gameHistory.length === 0}
             >
               Provably Fair
             </button>
