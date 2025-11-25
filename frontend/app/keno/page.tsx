@@ -20,6 +20,20 @@ import { verify_keno_game } from '@/lib/kenoVerification';
 import { getSeedInfo, rerollSeed } from '@/lib/minesApi';
 
 export default function KenoPage() {
+    // Stake Medium mode payout table (user provided)
+    const payoutTable: { [spots: number]: { [hits: number]: number } } = {
+      1: {0: 0.40, 1: 2.75},
+      2: {0: 0.00, 1: 1.80, 2: 5.10},
+      3: {0: 0.00, 1: 0.00, 2: 2.80, 3: 50.00},
+      4: {0: 0.00, 1: 0.00, 2: 1.70, 3: 10.00, 4: 100.00},
+      5: {0: 0.00, 1: 0.00, 2: 1.40, 3: 4.00, 4: 14.00, 5: 390.00},
+      6: {0: 0.00, 1: 0.00, 2: 0.00, 3: 3.00, 4: 9.00, 5: 180.00, 6: 710.00},
+      7: {0: 0.00, 1: 0.00, 2: 0.00, 3: 2.00, 4: 7.00, 5: 30.00, 6: 400.00, 7: 800.00},
+      8: {0: 0.00, 1: 0.00, 2: 0.00, 3: 2.00, 4: 4.00, 5: 11.00, 6: 67.00, 7: 400.00, 8: 900.00},
+      9: {0: 0.00, 1: 0.00, 2: 0.00, 3: 2.00, 4: 2.50, 5: 5.00, 6: 15.00, 7: 100.00, 8: 500.00, 9: 1000.00},
+      10: {0: 0.00, 1: 0.00, 2: 0.00, 3: 1.60, 4: 2.00, 5: 4.00, 6: 7.00, 7: 26.00, 8: 100.00, 9: 500.00, 10: 1000.00}
+    };
+
   const { user, loading, setBalance } = useUser();
   const router = useRouter();
   const [betAmount, setBetAmount] = useState<string>('0.00');
@@ -440,7 +454,6 @@ export default function KenoPage() {
                 const isSelected = selectedNumbers.includes(num);
                 const isDrawn = drawnNumbers.slice(0, currentDrawIndex).includes(num);
                 const isHit = isSelected && isDrawn;
-                
                 return (
                   <button
                     key={num}
@@ -460,6 +473,38 @@ export default function KenoPage() {
                   </button>
                 );
               })}
+            </div>
+            {/* Dynamic payout table below the grid */}
+            <div style={{ marginTop: '24px', width: '100%', textAlign: 'center' }}>
+              {selectedNumbers.length === 0 ? (
+                <div style={{ color: '#aaa', fontSize: '1.1em', padding: '12px 0' }}>
+                  Select 1-10 numbers to play
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                    Payouts for {selectedNumbers.length} selected:
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {Object.entries(payoutTable[selectedNumbers.length] || {}).map(([hits, mult]) => (
+                      <div key={hits} style={{
+                        background: '#222',
+                        borderRadius: 6,
+                        padding: '6px 12px',
+                        minWidth: 60,
+                        margin: 2,
+                        color: Number(mult) > 0 ? '#fff' : '#888',
+                        border: Number(mult) > 0 ? '1.5px solid #4f8cff' : '1.5px solid #333',
+                        fontWeight: 500
+                      }}>
+                        <span style={{ fontSize: '0.95em' }}>{hits}x</span>
+                        <br />
+                        <span style={{ fontSize: '1.1em' }}>{Number(mult).toFixed(2)}x</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
