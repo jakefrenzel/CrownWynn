@@ -20,7 +20,7 @@ def hash_seed(seed):
 
 def draw_keno_numbers(server_seed, client_seed, nonce):
     """
-    Draw 20 numbers from 1-40 using provably fair algorithm.
+    Draw 10 numbers from 1-40 using provably fair algorithm.
     
     Args:
         server_seed: Server's secret seed
@@ -28,7 +28,7 @@ def draw_keno_numbers(server_seed, client_seed, nonce):
         nonce: Game counter
     
     Returns:
-        List of 20 drawn numbers [1-40]
+        List of 10 drawn numbers [1-40]
     """
     # Combine seeds and nonce
     combined = f"{server_seed}:{client_seed}:{nonce}"
@@ -36,11 +36,11 @@ def draw_keno_numbers(server_seed, client_seed, nonce):
     # Create hash
     hash_result = hashlib.sha256(combined.encode()).hexdigest()
     
-    # Use hash to deterministically select 20 numbers
+    # Use hash to deterministically select 10 numbers
     drawn_numbers = []
     hash_index = 0
     
-    while len(drawn_numbers) < 20:
+    while len(drawn_numbers) < 10:
         # Take 2 hex characters at a time (0-255)
         if hash_index + 2 > len(hash_result):
             # If we run out of hash, rehash with a counter

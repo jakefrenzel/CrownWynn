@@ -42,6 +42,7 @@ export default function KenoPage() {
   const [showStats, setShowStats] = useState<boolean>(false);
   const [stats, setStats] = useState<any>(null);
   const [currentDrawIndex, setCurrentDrawIndex] = useState<number>(0);
+  const [quickPickAmount, setQuickPickAmount] = useState<number>(10);
 
   const handleHalfBet = () => {
     const current = parseFloat(betAmount) || 0;
@@ -115,40 +116,50 @@ export default function KenoPage() {
     
     // After animation completes
     setIsAnimating(false);
+    setIsGameActive(false);
     
     // Refresh game history
     fetchGameHistory();
+    
+    // Keep drawn numbers and results visible until cleared
   };
 
-  const handlePlayAgain = () => {
-    setIsGameActive(false);
-    setIsAnimating(false);
+  const handleClearSelection = () => {
+    if (isGameActive || isAnimating) return;
+    setSelectedNumbers([]);
     setDrawnNumbers([]);
     setMatches(0);
     setMultiplier(0.00);
     setNetGain('0.00');
     setGameId(null);
     setCurrentDrawIndex(0);
-    // Keep selectedNumbers so player can play again with same numbers
-  };
-
-  const handleClearSelection = () => {
-    if (isGameActive || isAnimating) return;
-    setSelectedNumbers([]);
   };
 
   const handleQuickPick = () => {
     if (isGameActive || isAnimating) return;
     
-    // Generate 10 random numbers
+    // Generate random numbers based on quickPickAmount (max 10)
+    const amount = Math.min(quickPickAmount, 10);
     const numbers: number[] = [];
-    while (numbers.length < 10) {
+    while (numbers.length < amount) {
       const random = Math.floor(Math.random() * 40) + 1;
       if (!numbers.includes(random)) {
         numbers.push(random);
       }
     }
     setSelectedNumbers(numbers.sort((a, b) => a - b));
+  };
+
+  const handleAutoPick = () => {
+    if (isGameActive || isAnimating || selectedNumbers.length >= 10) return;
+    
+    // Add one random number that hasn't been selected yet
+    let random: number;
+    do {
+      random = Math.floor(Math.random() * 40) + 1;
+    } while (selectedNumbers.includes(random));
+    
+    setSelectedNumbers([...selectedNumbers, random].sort((a, b) => a - b));
   };
 
   const handleVerifyGame = async () => {
@@ -325,19 +336,46 @@ export default function KenoPage() {
             <div className={styles.crowns_display}>
               {selectedNumbers.length} / 10
             </div>
+            <div className={styles.label_container}>
+              <div className={`${styles.label} ${styles.game_label}`}>Selection</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'stretch', marginTop: '10px', width: '100%' }}>
+              <button 
+                className={`${styles.bet_section_button} ${(isGameActive || isAnimating) ? styles.disabled : ''}`}
+                disabled={isGameActive || isAnimating}
+                onClick={handleQuickPick}
+                style={{ 
+                  borderRadius: '5px 0 0 5px',
+                  borderRight: 'none',
+                  margin: 0,
+                  flex: 1
+                }}
+              >
+                Quick Pick
+              </button>
+              <select
+                className={styles.mines_select}
+                value={quickPickAmount}
+                onChange={(e) => setQuickPickAmount(Number(e.target.value))}
+                disabled={isGameActive || isAnimating}
+                style={{
+                  borderRadius: '0 5px 5px 0',
+                  width: '70px',
+                  margin: 0,
+                  padding: '0 24px 0 8px'
+                }}
+              >
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
+                  <option key={num} value={num}>{num}</option>
+                ))}
+              </select>
+            </div>
             <button 
-              className={`${styles.bet_section_button} ${styles.play_button_green}`}
-              onClick={isGameActive || isAnimating ? handlePlayAgain : handleStartGame}
-              disabled={(isGameActive && isAnimating) || (!isGameActive && selectedNumbers.length === 0)}
+              className={`${styles.bet_section_button} ${(isGameActive || isAnimating || selectedNumbers.length >= 10) ? styles.disabled : ''}`}
+              disabled={isGameActive || isAnimating || selectedNumbers.length >= 10}
+              onClick={handleAutoPick}
             >
-              {isGameActive || isAnimating ? 'Play Again' : 'Play'}
-            </button>
-            <button 
-              className={`${styles.bet_section_button} ${(isGameActive || isAnimating) ? styles.disabled : ''}`}
-              disabled={isGameActive || isAnimating}
-              onClick={handleQuickPick}
-            >
-              Quick Pick
+              Auto Pick
             </button>
             <button 
               className={`${styles.bet_section_button} ${(isGameActive || isAnimating) ? styles.disabled : ''}`}
@@ -345,6 +383,13 @@ export default function KenoPage() {
               onClick={handleClearSelection}
             >
               Clear
+            </button>
+            <button 
+              className={`${styles.bet_section_button} ${styles.play_button_green}`}
+              onClick={handleStartGame}
+              disabled={isGameActive || isAnimating || selectedNumbers.length === 0}
+            >
+              Play
             </button>
             <div className={styles.label_container}>
               <div className={`${styles.label} ${styles.game_label}`}>
@@ -378,8 +423,12 @@ export default function KenoPage() {
                     } ${isDrawn ? styles.keno_drawn : ''} ${
                       isHit ? styles.keno_hit : ''
                     }`}
-                    disabled={isGameActive || isAnimating}
-                    onClick={() => handleNumberClick(num)}
+                    onClick={() => {
+                      if (!isGameActive && !isAnimating) {
+                        handleNumberClick(num);
+                      }
+                    }}
+                    style={{ pointerEvents: (isGameActive || isAnimating) ? 'none' : 'auto' }}
                   >
                     {isHit ? '👑' : num}
                   </button>

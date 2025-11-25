@@ -11,7 +11,7 @@ async function hash_seed_sha256(seed: string): Promise<string> {
 }
 
 /**
- * Draw 20 Keno numbers from 1-40 using provably fair algorithm
+ * Draw 10 Keno numbers from 1-40 using provably fair algorithm
  * THIS MUST MATCH THE BACKEND LOGIC EXACTLY
  */
 async function draw_keno_numbers(
@@ -32,7 +32,7 @@ async function draw_keno_numbers(
   const drawnNumbers: number[] = [];
   let hashIndex = 0;
   
-  while (drawnNumbers.length < 20) {
+  while (drawnNumbers.length < 10) {
     // Take 2 hex characters at a time (0-255)
     if (hashIndex + 2 > hashResult.length) {
       // If we run out of hash, rehash with a counter
