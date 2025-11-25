@@ -63,30 +63,33 @@ def generate_mine_positions(server_seed, client_seed, nonce, mines_count):
 
 def calculate_multiplier(tiles_revealed, mines_count):
     """
-    Calculate exponential multiplier based on tiles revealed and mines count.
-    
-    Formula: multiplier = (total_tiles / safe_tiles) ^ tiles_revealed
-    
-    Args:
-        tiles_revealed: Number of safe tiles revealed
-        mines_count: Total number of mines in game
-    
-    Returns:
-        Multiplier as float rounded to 2 decimal places
+    Calculate multiplier using Stake's combinatorial formula:
+    Multiplier = C(25, r) / C(25-m, r)
+    where m = mines_count, r = tiles_revealed
     """
+    import math
     if tiles_revealed == 0:
         return 1.00
-    
     total_tiles = 25
-    safe_tiles = total_tiles - mines_count
-    
-    # Base multiplier: ratio of total to safe tiles
-    base = total_tiles / safe_tiles
-    
-    # Exponential growth
-    multiplier = base ** tiles_revealed
-    
-    return round(multiplier, 2)
+    m = mines_count
+    r = tiles_revealed
+    if r > total_tiles - m:
+        return 0.0
+    def nCr(n, k):
+        if k < 0 or k > n:
+            return 0
+        return math.comb(n, k)
+    try:
+        numerator = nCr(total_tiles, r)
+        denominator = nCr(total_tiles - m, r)
+        if denominator == 0:
+            return 0.0
+        multiplier = numerator / denominator
+        # Stake applies a house edge of 1%, so multiply by 0.99
+        multiplier *= 0.99
+        return round(multiplier, 4)
+    except Exception:
+        return 0.0
 
 
 def verify_game_fairness(server_seed, client_seed, nonce, mines_count, claimed_positions):
