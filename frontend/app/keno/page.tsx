@@ -475,34 +475,19 @@ export default function KenoPage() {
               })}
             </div>
             {/* Dynamic payout table below the grid */}
-            <div style={{ marginTop: '24px', width: '100%', textAlign: 'center' }}>
+            <div className={styles.payout_wrapper}>
               {selectedNumbers.length === 0 ? (
-                <div style={{ color: '#aaa', fontSize: '1.1em', padding: '12px 0' }}>
+                <div className={styles.payout_empty}>
                   Select 1-10 numbers to play
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                    Payouts for {selectedNumbers.length} selected:
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-                    {Object.entries(payoutTable[selectedNumbers.length] || {}).map(([hits, mult]) => (
-                      <div key={hits} style={{
-                        background: '#222',
-                        borderRadius: 6,
-                        padding: '6px 12px',
-                        minWidth: 60,
-                        margin: 2,
-                        color: Number(mult) > 0 ? '#fff' : '#888',
-                        border: Number(mult) > 0 ? '1.5px solid #4f8cff' : '1.5px solid #333',
-                        fontWeight: 500
-                      }}>
-                        <span style={{ fontSize: '0.95em' }}>{hits}x</span>
-                        <br />
-                        <span style={{ fontSize: '1.1em' }}>{Number(mult).toFixed(2)}x</span>
-                      </div>
-                    ))}
-                  </div>
+                <div className={styles.payout_boxes}>
+                  {Object.entries(payoutTable[selectedNumbers.length] || {}).map(([hits, mult]) => (
+                    <div key={hits} className={styles.payout_box} data-active={Number(mult) > 0}>
+                      <span className={styles.payout_hits}>{hits}x</span>
+                      <span className={styles.payout_mult}>{Number(mult).toFixed(2)}x</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

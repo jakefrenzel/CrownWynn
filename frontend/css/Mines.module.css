@@ -16,7 +16,7 @@
     justify-content: flex-start;
     align-items: stretch;
     width: 80vw;
-    height: 70vh;
+    height: 62vh;
     margin-top: 40px;
 }
 
@@ -279,14 +279,79 @@
 
 .mines_container {
     display: flex;
+    flex-direction: column;
     flex-grow: 1;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
+    gap: 12px;
     background-color: #0f212e;
     border-radius: 0 6px 6px 0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+    padding: 12px;
 }
+
+/* Payout area below the keno board; constrained to board width */
+.payout_wrapper {
+    width: 100%;
+    max-width: 760px; /* match constrained .keno_board max-width */
+    margin: 0 auto;
+    text-align: center;
+    margin-top: 6px;
+    color: #c8d1db;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px; /* ensures vertical centering space */
+}
+
+.payout_empty {
+    color: #aaa;
+    font-size: 0.95rem;
+    padding: 4px 0;
+}
+
+/* Keep payout boxes on a single row; allow horizontal scroll if needed */
+.payout_boxes {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: nowrap; /* prevent wrapping */
+    overflow-x: hidden; /* we will fit boxes instead of scrolling */
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 4px;
+}
+
+/* Optional: visually hide scrollbar but keep scrollable */
+.payout_boxes::-webkit-scrollbar { height: 8px; }
+.payout_boxes::-webkit-scrollbar-track { background: transparent; }
+.payout_boxes::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 4px; }
+
+/* Individual payout box */
+.payout_box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    min-width: 64px;
+    box-sizing: border-box;
+    border-radius: 6px;
+    background: #222;
+    border: 1.25px solid #333;
+    color: #888;
+    font-weight: 600;
+    text-align: center;
+}
+
+.payout_box[data-active='true'] {
+    color: #fff;
+    border-color: #4f8cff;
+}
+
+.payout_hits { font-size: 0.85rem; line-height: 1; }
+.payout_mult { font-size: 1rem; line-height: 1; margin-top: 2px; }
 
 .grid_container {
     display: grid;
@@ -356,8 +421,8 @@
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(5, 1fr);
     gap: 10px;
-    width: 95%;
-    max-width: 720px;
+    width: 100%;
+    max-width: 760px; /* constrained to avoid overflow */
     aspect-ratio: 8/5;
 }
 
@@ -368,7 +433,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: var(--font-nunito-sans), sans-serif;
-    font-size: 1.25rem;
+    font-size: 1.35rem;
     font-weight: 700;
     color: #b1bad3;
     display: flex;
