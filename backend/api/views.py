@@ -1,3 +1,4 @@
+
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status, generics, permissions
 from rest_framework.response import Response
@@ -11,12 +12,12 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from decimal import Decimal
 from django.db import transaction
+import os
 
 # Auth & CSRF Protection
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
 
 from api.serializers import ProfileSerializer
 from api.models import MinesGame, KenoGame
@@ -68,14 +69,24 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         access_token = data.get("access")
         refresh_token = data.get("refresh")
 
-        if access_token and refresh_token:
-            # Use secure=False for local dev; switch to True behind HTTPS
+        # Dynamically set cookie security for dev/prod
+        debug = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')
+        if debug:
             cookie_kwargs = {
                 "httponly": True,
                 "secure": False,
                 "samesite": "Lax",
                 "path": "/",
             }
+        else:
+            cookie_kwargs = {
+                "httponly": True,
+                "secure": True,
+                "samesite": "None",
+                "path": "/",
+            }
+
+        if access_token and refresh_token:
             response.set_cookie("access_token", access_token, **cookie_kwargs)
             response.set_cookie("refresh_token", refresh_token, **cookie_kwargs)
 
@@ -95,14 +106,28 @@ class CookieTokenRefreshView(TokenRefreshView):
         request.data["refresh"] = refresh_token
         response = super().post(request, *args, **kwargs)
         new_access = getattr(response, "data", {}).get("access")
+
+        debug = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')
+        if debug:
+            cookie_kwargs = {
+                "httponly": True,
+                "secure": False,
+                "samesite": "Lax",
+                "path": "/",
+            }
+        else:
+            cookie_kwargs = {
+                "httponly": True,
+                "secure": True,
+                "samesite": "None",
+                "path": "/",
+            }
+
         if new_access:
             response.set_cookie(
                 "access_token",
                 new_access,
-                httponly=True,
-                secure=False,  # keep False locally; change in production
-                samesite="Lax",
-                path="/",
+                **cookie_kwargs
             )
         response.data.pop("access", None)
         return response
