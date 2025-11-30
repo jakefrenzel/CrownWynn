@@ -157,24 +157,33 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ✅ Development CORS setup
+
+# CORS/CSRF: allow comma-separated env overrides for production
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000", 
-    "http://127.0.0.1:3000",
-    "http://localhost",        # Nginx proxy
-    "http://127.0.0.1",        # Nginx proxy
-    "http://frontend:3000",    # Docker internal
-]
+_cors_env = os.environ.get('CORS_ALLOWED_ORIGINS')
+if _cors_env:
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_env.split(',') if o.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "http://localhost",        # Nginx proxy
+        "http://127.0.0.1",        # Nginx proxy
+        "http://frontend:3000",    # Docker internal
+    ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000", 
-    "http://127.0.0.1:3000",
-    "http://localhost",
-    "http://127.0.0.1",
-    "http://frontend:3000",
-]
+_csrf_env = os.environ.get('CSRF_TRUSTED_ORIGINS')
+if _csrf_env:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_env.split(',') if o.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "http://localhost",
+        "http://127.0.0.1",
+        "http://frontend:3000",
+    ]
 
 #JWT Authentication Settings
 REST_FRAMEWORK = {
