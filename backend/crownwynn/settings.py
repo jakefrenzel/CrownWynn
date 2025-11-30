@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 # Load local .env for development
 try:
@@ -106,6 +106,14 @@ if DATABASE_URL:
             'PORT': parsed.port or '',
         }
     }
+    # If the DATABASE_URL contained query params (e.g. ?sslmode=require),
+    # parse them and pass through to the DB OPTIONS so psycopg2/Django honor SSL.
+    qs = parse_qs(parsed.query)
+    options = {}
+    if 'sslmode' in qs and qs['sslmode']:
+        options['sslmode'] = qs['sslmode'][0]
+    if options:
+        DATABASES['default']['OPTIONS'] = options
 else:
     # Fallback to sqlite for local dev
     DATABASES = {

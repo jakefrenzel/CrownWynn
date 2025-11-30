@@ -23,7 +23,7 @@ COPY . /app/
 
 # Create non-root user
 # Add entrypoint script and switch to a safer production command
-COPY backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose port
