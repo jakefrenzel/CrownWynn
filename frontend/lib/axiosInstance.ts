@@ -1,9 +1,14 @@
 import axios from "axios";
 
-// Use different URLs based on environment
-const baseURL = process.env.NODE_ENV === 'production' 
-  ? "/api"  // In production, use relative path (handled by Nginx)
-  : "http://localhost:8000";  // In development, direct to backend
+// Read API base from NEXT_PUBLIC_API_BASE (set at build time by Next.js).
+// Fallbacks:
+// - If NEXT_PUBLIC_API_BASE is provided use it (recommended for prod builds)
+// - Otherwise in production use a relative `/api` path (e.g. reverse-proxied)
+// - In development fallback to `http://localhost:8000`
+const envApiBase = (process.env as any)?.NEXT_PUBLIC_API_BASE;
+const baseURL = envApiBase && envApiBase.length > 0
+  ? envApiBase
+  : (process.env.NODE_ENV === 'production' ? "/api" : "http://localhost:8000");
 
 const axiosInstance = axios.create({
   baseURL,

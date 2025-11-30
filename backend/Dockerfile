@@ -22,12 +22,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app/
 
 # Create non-root user
-RUN adduser --disabled-password --gecos '' appuser
-RUN chown -R appuser:appuser /app
-USER appuser
+# Add entrypoint script and switch to a safer production command
+COPY backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose port
 EXPOSE 8000
 
-# Run the application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Use entrypoint to run migrations/collectstatic and start gunicorn
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
