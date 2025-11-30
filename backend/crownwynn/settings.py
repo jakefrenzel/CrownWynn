@@ -15,6 +15,33 @@ from pathlib import Path
 from datetime import timedelta
 from urllib.parse import urlparse, parse_qs
 
+
+def _split_and_clean(env_val: str):
+    """Split a comma-separated env var, strip whitespace and trailing slashes."""
+    return [v.strip().rstrip('/') for v in env_val.split(',') if v.strip()]
+
+
+def _hosts_from_env(env_val: str):
+    """Parse ALLOWED_HOSTS-like env entries: remove scheme if present and strip trailing slash.
+
+    Examples handled:
+      - 'example.com' -> 'example.com'
+      - 'https://example.com' -> 'example.com'
+      - 'https://example.com/' -> 'example.com'
+      - 'example.com:8000' -> 'example.com:8000'
+    """
+    hosts = []
+    for v in env_val.split(','):
+        v = v.strip()
+        if not v:
+            continue
+        v = v.rstrip('/')
+        # remove scheme if present
+        if v.startswith('http://') or v.startswith('https://'):
+            v = v.split('://', 1)[1]
+        hosts.append(v)
+    return hosts
+
 # Load local .env for development
 try:
     from dotenv import load_dotenv
@@ -42,7 +69,7 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')
 
 # Allowed hosts (comma-separated in env)
 _allowed = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
-ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
+ALLOWED_HOSTS = _hosts_from_env(_allowed)
 
 
 # Application definition
@@ -171,10 +198,11 @@ CORS_ALLOW_CREDENTIALS = True
 
 _cors_env = os.environ.get('CORS_ALLOWED_ORIGINS')
 if _cors_env:
-    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_env.split(',') if o.strip()]
+    # Keep full origins (scheme+host[:port]) but normalize whitespace and trailing slash
+    CORS_ALLOWED_ORIGINS = _split_and_clean(_cors_env)
 else:
     CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000", 
+        "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost",        # Nginx proxy
         "http://127.0.0.1",        # Nginx proxy
@@ -183,10 +211,11 @@ else:
 
 _csrf_env = os.environ.get('CSRF_TRUSTED_ORIGINS')
 if _csrf_env:
-    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_env.split(',') if o.strip()]
+    # Keep full origins (scheme+host[:port]) but normalize whitespace and trailing slash
+    CSRF_TRUSTED_ORIGINS = _split_and_clean(_csrf_env)
 else:
     CSRF_TRUSTED_ORIGINS = [
-        "http://localhost:3000", 
+        "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost",
         "http://127.0.0.1",
