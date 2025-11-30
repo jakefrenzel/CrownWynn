@@ -135,11 +135,6 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
             <div className={`${styles.header_segments} ${styles.header_button_container}`}>
                 {user ? (
                     <>
-                        {onStatsClick && (
-                            <button onClick={onStatsClick} className={styles.header_button}>
-                                Stats
-                            </button>
-                        )}
                         <button 
                             onClick={handleClaimDaily} 
                             className={styles.header_button}
@@ -151,6 +146,11 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
                         >
                             {canClaim ? 'Daily' : formatTimeRemaining(timeRemaining)}
                         </button>
+                        {onStatsClick && (
+                            <button onClick={onStatsClick} className={styles.header_button}>
+                                Stats
+                            </button>
+                        )}
                         <button onClick={handleLogout} className={styles.header_button}>
                             Logout
                         </button>
