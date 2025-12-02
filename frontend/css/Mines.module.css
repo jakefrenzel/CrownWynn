@@ -482,6 +482,12 @@
     animation: hitPulse 0.5s ease;
 }
 
+.keno_number.keno_hit:hover {
+    background-color: #4ade80;
+    border-color: #22c55e;
+    transform: scale(1.05);
+}
+
 @keyframes hitPulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.15); }

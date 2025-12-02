@@ -46,6 +46,7 @@ export default function MinesPage() {
   const [showStats, setShowStats] = useState<boolean>(false);
   const [stats, setStats] = useState<any>(null);
   const [recentWins, setRecentWins] = useState<MinesRecentWinItem[]>([]);
+  const [revealingTile, setRevealingTile] = useState<number | null>(null);
   
   // Calculate crowns: 25 total tiles - mines - revealed tiles
   const crownsCount = 25 - minesCount - revealedTiles.length;
@@ -218,6 +219,7 @@ export default function MinesPage() {
 
     try {
       setErrorMessage('');
+      setRevealingTile(tilePosition);
       const response = await revealTile(gameId, tilePosition);
       
       if (response.game_over) {
@@ -252,6 +254,8 @@ export default function MinesPage() {
       }
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to reveal tile');
+    } finally {
+      setRevealingTile(null);
     }
   };
 
@@ -448,6 +452,7 @@ export default function MinesPage() {
                 const isRevealed = revealedTiles.includes(i);
                 const isMine = minePositions.includes(i);
                 const showContent = gameOver || isRevealed;
+                const isRevealing = revealingTile === i;
                 
                 return (
                   <button
@@ -455,14 +460,22 @@ export default function MinesPage() {
                     className={`${styles.grid_tile} ${
                       isRevealed ? styles.revealed : ''
                     } ${isMine && gameOver ? styles.mine : ''}`}
-                    disabled={!isGameActive || gameOver}
+                    disabled={!isGameActive || gameOver || isRevealing}
                     onClick={() => handleTileClick(i)}
                   >
-                    {showContent && (
+                    {isRevealing ? (
+                      <Image
+                        src="/assets/cardw.png"
+                        alt="Loading"
+                        width={32}
+                        height={32}
+                        className={styles.tile_content}
+                      />
+                    ) : showContent ? (
                       <span className={styles.tile_content}>
                         {isMine ? '💣' : '👑'}
                       </span>
-                    )}
+                    ) : null}
                   </button>
                 );
               })}

@@ -66,8 +66,13 @@ export default function KenoPage() {
   // Helper to compute multiplier/net from local table
   const computeFinalFromTable = (spots: number, matches: number, bet: number) => {
     const mult = payoutTable[spots]?.[matches] ?? 0.0;
-    const payout = mult > 0 ? bet * mult : 0;
-    return { mult, net: (payout - bet).toFixed(2) };
+    // Calculate WIN AMOUNT (profit): total payout minus original bet
+    // If multiplier >= 1, there's a win; if < 1, it's a loss (but payout table uses 0 for losses)
+    const totalPayout = mult * bet;
+    const winAmount = totalPayout - bet;
+    // Only show positive wins; losses stay at 0
+    const displayWin = winAmount > 0 ? winAmount : 0;
+    return { mult, net: displayWin.toFixed(2) };
   };
 
   // Live update multiplier/net gain during draw animation
@@ -81,9 +86,14 @@ export default function KenoPage() {
     // Lookup interim multiplier from table
     const mult = payoutTable[spots]?.[currentMatches] ?? 0.0;
     setMultiplier(mult);
-    const payout = mult > 0 ? bet * mult : 0;
-    setNetGain((payout - bet).toFixed(2));
-  }, [currentDrawIndex, isAnimating]);
+    
+    // Calculate WIN AMOUNT (profit): total payout minus original bet
+    const totalPayout = mult * bet;
+    const winAmount = totalPayout - bet;
+    // Only show positive wins; losses or no-win stay at 0
+    const displayWin = winAmount > 0 ? winAmount : 0;
+    setNetGain(displayWin.toFixed(2));
+  }, [currentDrawIndex, isAnimating, betAmount, selectedNumbers, drawnNumbers, payoutTable]);
 
   const handleHalfBet = () => {
     const current = parseFloat(betAmount) || 0;
@@ -97,6 +107,14 @@ export default function KenoPage() {
 
   const handleNumberClick = (number: number) => {
     if (isGameActive || isAnimating) return;
+    
+    // Clear previous game results when modifying selections
+    setDrawnNumbers([]);
+    setMatches(0);
+    setMultiplier(0.00);
+    setNetGain('0.00');
+    setGameId(null);
+    setCurrentDrawIndex(0);
     
     if (selectedNumbers.includes(number)) {
       // Deselect
@@ -127,10 +145,10 @@ export default function KenoPage() {
 
       setIsGameActive(true);
       setIsAnimating(true);
-      // Reset interim display; net gain starts at -bet
+      // Reset to 0 at start; will update live during animation
       setCurrentDrawIndex(0);
       setMultiplier(0.0);
-      setNetGain((-bet).toFixed(2));
+      setNetGain('0.00');
 
       const response = await startKenoGame(bet, selectedNumbers);
       
@@ -167,11 +185,8 @@ export default function KenoPage() {
     setIsAnimating(false);
     setIsGameActive(false);
     setIsStarting(false);
-    // Apply final server-calculated results
-    // Apply final values smoothly if they differ from interim
-    setMultiplier(finalMultiplier);
-    setNetGain(finalNetGain);
-    // Finalize with server result from response already stored
+    // Live calculation already set the correct final values during last draw step
+    // Don't overwrite - keep the live result
     // Refresh game history
     fetchGameHistory();
     
@@ -468,19 +483,12 @@ export default function KenoPage() {
               aria-busy={isStarting || isAnimating}
             >
               {(isStarting || isAnimating) ? (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                  <svg width="20" height="20" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <g fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      {/** back card */}
-                      <rect x="9" y="18" width="28" height="38" rx="4" ry="4" opacity="0.25"/>
-                      {/** front card slightly offset */}
-                      <rect x="27" y="12" width="28" height="38" rx="4" ry="4"/>
-                      {/** simple suit mark */}
-                      <path d="M41 26c2 0 3 1.2 3 3 0 2.5-2.5 4-5 6-2.5-2-5-3.5-5-6 0-1.8 1-3 3-3 1.2 0 2.2.6 3 1.6.8-1 1.8-1.6 3-1.6z" />
-                    </g>
-                  </svg>
-                  {isStarting ? 'Starting' : 'Drawing'}
-                </span>
+                <Image
+                  src="/assets/cardw.png"
+                  alt="Loading"
+                  width={24}
+                  height={24}
+                />
               ) : (
                 'Play'
               )}
