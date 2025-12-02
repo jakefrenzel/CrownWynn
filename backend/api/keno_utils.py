@@ -64,33 +64,24 @@ def calculate_keno_multiplier(spots_selected, matches):
     """
     Calculate Keno payout multiplier based on spots selected and matches.
     
-    This uses a typical Keno payout table structure.
-    
-    Args:
-        spots_selected: Number of spots/numbers the player selected (1-10)
-        matches: Number of matches between selected and drawn numbers
-    
-    Returns:
-        Multiplier as float (0.00 if no win)
+    Uses the updated Stake Medium mode payout table provided by the user.
     """
-    # Keno payout table: {spots_selected: {matches: multiplier}}
+    # Updated payout table: {spots_selected: {matches: multiplier}}
     payout_table = {
-        1: {1: 3.36},
-        2: {2: 13.20},
-        3: {2: 1.68, 3: 46.80},
-        4: {2: 1.44, 3: 5.04, 4: 130.80},
-        5: {3: 2.16, 4: 19.20, 5: 600.00},
-        6: {3: 1.92, 4: 7.20, 5: 90.00, 6: 1800.00},
-        7: {4: 2.40, 5: 16.80, 6: 360.00, 7: 7000.00},
-        8: {5: 4.32, 6: 54.00, 7: 1200.00, 8: 12000.00},
-        9: {5: 3.36, 6: 12.00, 7: 240.00, 8: 3600.00, 9: 25000.00},
-        10: {5: 2.40, 6: 7.20, 7: 60.00, 8: 600.00, 9: 6000.00, 10: 100000.00}
+        1: {0: 0.40, 1: 2.75},
+        2: {0: 0.00, 1: 1.80, 2: 5.10},
+        3: {0: 0.00, 1: 0.00, 2: 2.80, 3: 50.00},
+        4: {0: 0.00, 1: 0.00, 2: 1.70, 3: 10.00, 4: 100.00},
+        5: {0: 0.00, 1: 0.00, 2: 1.40, 3: 4.00, 4: 14.00, 5: 390.00},
+        6: {0: 0.00, 1: 0.00, 2: 0.00, 3: 3.00, 4: 9.00, 5: 180.00, 6: 710.00},
+        7: {0: 0.00, 1: 0.00, 2: 0.00, 3: 2.00, 4: 7.00, 5: 30.00, 6: 400.00, 7: 800.00},
+        8: {0: 0.00, 1: 0.00, 2: 0.00, 3: 2.00, 4: 4.00, 5: 11.00, 6: 67.00, 7: 400.00, 8: 900.00},
+        9: {0: 0.00, 1: 0.00, 2: 0.00, 3: 2.00, 4: 2.50, 5: 5.00, 6: 15.00, 7: 100.00, 8: 500.00, 9: 1000.00},
+        10: {0: 0.00, 1: 0.00, 2: 0.00, 3: 1.60, 4: 2.00, 5: 4.00, 6: 7.00, 7: 26.00, 8: 100.00, 9: 500.00, 10: 1000.00},
     }
-    
-    # Return multiplier if spots and matches are valid
+
     if spots_selected in payout_table:
         return payout_table[spots_selected].get(matches, 0.00)
-    
     return 0.00
 
 
