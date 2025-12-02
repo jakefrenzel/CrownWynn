@@ -60,6 +60,30 @@ export default function KenoPage() {
   const [currentDrawIndex, setCurrentDrawIndex] = useState<number>(0);
   const [quickPickAmount, setQuickPickAmount] = useState<number>(10);
   const [recentWins, setRecentWins] = useState<RecentWinItem[]>([]);
+  const [isStarting, setIsStarting] = useState<boolean>(false);
+  const [finalMultiplier, setFinalMultiplier] = useState<number>(0);
+  const [finalNetGain, setFinalNetGain] = useState<string>('0.00');
+  // Helper to compute multiplier/net from local table
+  const computeFinalFromTable = (spots: number, matches: number, bet: number) => {
+    const mult = payoutTable[spots]?.[matches] ?? 0.0;
+    const payout = mult > 0 ? bet * mult : 0;
+    return { mult, net: (payout - bet).toFixed(2) };
+  };
+
+  // Live update multiplier/net gain during draw animation
+  useEffect(() => {
+    if (!isAnimating) return;
+    if (currentDrawIndex === 0) return;
+    const bet = parseFloat(betAmount) || 0;
+    const spots = selectedNumbers.length;
+    const revealed = drawnNumbers.slice(0, currentDrawIndex);
+    const currentMatches = selectedNumbers.filter(n => revealed.includes(n)).length;
+    // Lookup interim multiplier from table
+    const mult = payoutTable[spots]?.[currentMatches] ?? 0.0;
+    setMultiplier(mult);
+    const payout = mult > 0 ? bet * mult : 0;
+    setNetGain((payout - bet).toFixed(2));
+  }, [currentDrawIndex, isAnimating]);
 
   const handleHalfBet = () => {
     const current = parseFloat(betAmount) || 0;
@@ -88,6 +112,7 @@ export default function KenoPage() {
   const handleStartGame = async () => {
     try {
       setErrorMessage('');
+      setIsStarting(true);
       const bet = parseFloat(betAmount);
       
       if (isNaN(bet) || bet <= 0) {
@@ -102,15 +127,21 @@ export default function KenoPage() {
 
       setIsGameActive(true);
       setIsAnimating(true);
+      // Reset interim display; net gain starts at -bet
       setCurrentDrawIndex(0);
+      setMultiplier(0.0);
+      setNetGain((-bet).toFixed(2));
 
       const response = await startKenoGame(bet, selectedNumbers);
       
       setGameId(response.game_id);
       setDrawnNumbers(response.drawn_numbers);
       setMatches(response.matches);
-      setMultiplier(parseFloat(response.multiplier));
-      setNetGain(response.net_profit);
+      // Derive final from local table to keep UI consistent
+      const betNum = bet;
+      const { mult, net } = computeFinalFromTable(selectedNumbers.length, response.matches, betNum);
+      setFinalMultiplier(mult);
+      setFinalNetGain(net);
       
       // Update user balance
       setBalance(parseFloat(response.balance));
@@ -122,6 +153,7 @@ export default function KenoPage() {
       setErrorMessage(error.response?.data?.error || 'Failed to start game');
       setIsGameActive(false);
       setIsAnimating(false);
+      setIsStarting(false);
     }
   };
 
@@ -134,7 +166,12 @@ export default function KenoPage() {
     // After animation completes
     setIsAnimating(false);
     setIsGameActive(false);
-    
+    setIsStarting(false);
+    // Apply final server-calculated results
+    // Apply final values smoothly if they differ from interim
+    setMultiplier(finalMultiplier);
+    setNetGain(finalNetGain);
+    // Finalize with server result from response already stored
     // Refresh game history
     fetchGameHistory();
     
@@ -427,9 +464,26 @@ export default function KenoPage() {
             <button 
               className={`${styles.bet_section_button} ${styles.play_button_green}`}
               onClick={handleStartGame}
-              disabled={isGameActive || isAnimating || selectedNumbers.length === 0}
+              disabled={isGameActive || isAnimating || isStarting || selectedNumbers.length === 0}
+              aria-busy={isStarting || isAnimating}
             >
-              Play
+              {(isStarting || isAnimating) ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <svg width="20" height="20" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <g fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      {/** back card */}
+                      <rect x="9" y="18" width="28" height="38" rx="4" ry="4" opacity="0.25"/>
+                      {/** front card slightly offset */}
+                      <rect x="27" y="12" width="28" height="38" rx="4" ry="4"/>
+                      {/** simple suit mark */}
+                      <path d="M41 26c2 0 3 1.2 3 3 0 2.5-2.5 4-5 6-2.5-2-5-3.5-5-6 0-1.8 1-3 3-3 1.2 0 2.2.6 3 1.6.8-1 1.8-1.6 3-1.6z" />
+                    </g>
+                  </svg>
+                  {isStarting ? 'Starting' : 'Drawing'}
+                </span>
+              ) : (
+                'Play'
+              )}
             </button>
             <div className={styles.label_container}>
               <div className={`${styles.label} ${styles.game_label}`}>
