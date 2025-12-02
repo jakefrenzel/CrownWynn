@@ -135,11 +135,13 @@ export default function KenoPage() {
       
       if (isNaN(bet) || bet <= 0) {
         setErrorMessage('Please enter a valid bet amount');
+        setIsStarting(false);
         return;
       }
 
       if (selectedNumbers.length === 0) {
         setErrorMessage('Please select at least 1 number');
+        setIsStarting(false);
         return;
       }
 
