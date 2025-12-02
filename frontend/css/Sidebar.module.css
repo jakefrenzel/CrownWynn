@@ -7,7 +7,7 @@
     background-color: #0f212e;
     transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.6);
-    z-index: 1001;
+    z-index: 1000;
     overflow-y: auto;
     border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -24,7 +24,7 @@
     bottom: 0;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
-    z-index: 1000;
+        z-index: 999;
 }
 
 .sidebar_content {
