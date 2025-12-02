@@ -47,6 +47,8 @@ export default function MinesPage() {
   const [stats, setStats] = useState<any>(null);
   const [recentWins, setRecentWins] = useState<MinesRecentWinItem[]>([]);
   const [isStarting, setIsStarting] = useState<boolean>(false);
+  const [isRevealing, setIsRevealing] = useState<boolean>(false);
+  const [isCashingOut, setIsCashingOut] = useState<boolean>(false);
   
   // Calculate crowns: 25 total tiles - mines - revealed tiles
   const crownsCount = 25 - minesCount - revealedTiles.length;
@@ -96,6 +98,7 @@ export default function MinesPage() {
     
     try {
       setErrorMessage('');
+      setIsCashingOut(true);
       const response = await cashout(gameId);
       setIsGameActive(false);
       setGameOver(true);
@@ -109,6 +112,8 @@ export default function MinesPage() {
       fetchGameHistory();
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to cashout');
+    } finally {
+      setIsCashingOut(false);
     }
   };
 
@@ -223,6 +228,7 @@ export default function MinesPage() {
 
     try {
       setErrorMessage('');
+      setIsRevealing(true);
       const response = await revealTile(gameId, tilePosition);
       
       if (response.game_over) {
@@ -258,7 +264,7 @@ export default function MinesPage() {
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to reveal tile');
     } finally {
-      // no-op
+      setIsRevealing(false);
     }
   };
 
@@ -421,10 +427,10 @@ export default function MinesPage() {
               <button 
               className={`${styles.bet_section_button} ${styles.play_button_green}`}
               onClick={handlePlayClick}
-              disabled={(isGameActive && revealedTiles.length === 0) || isStarting}
-              aria-busy={isStarting}
+              disabled={(isGameActive && revealedTiles.length === 0) || isStarting || isRevealing || isCashingOut}
+              aria-busy={isStarting || isRevealing || isCashingOut}
             >
-              {isStarting ? (
+              {(isStarting || isRevealing || isCashingOut) ? (
                 <Image
                   src="/assets/cardw.png"
                   alt="Loading"
@@ -437,7 +443,7 @@ export default function MinesPage() {
             </button>
             <button 
               className={`${styles.bet_section_button} ${!isGameActive ? styles.disabled : ''}`}
-              disabled={!isGameActive}
+              disabled={!isGameActive || isRevealing}
               onClick={handleAutoPick}
             >
               Auto Pick
@@ -465,7 +471,6 @@ export default function MinesPage() {
                 const isRevealed = revealedTiles.includes(i);
                 const isMine = minePositions.includes(i);
                 const showContent = gameOver || isRevealed;
-                // Removed tile-level loading; no revealing state per tile
                 
                 return (
                   <button
@@ -475,6 +480,7 @@ export default function MinesPage() {
                     } ${isMine && gameOver ? styles.mine : ''}`}
                     disabled={!isGameActive || gameOver}
                     onClick={() => handleTileClick(i)}
+                    style={{ pointerEvents: isRevealing ? 'none' : 'auto' }}
                   >
                     {showContent ? (
                       <span className={styles.tile_content}>
