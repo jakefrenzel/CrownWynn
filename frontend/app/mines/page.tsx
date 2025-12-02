@@ -46,7 +46,7 @@ export default function MinesPage() {
   const [showStats, setShowStats] = useState<boolean>(false);
   const [stats, setStats] = useState<any>(null);
   const [recentWins, setRecentWins] = useState<MinesRecentWinItem[]>([]);
-  const [revealingTile, setRevealingTile] = useState<number | null>(null);
+  const [isStarting, setIsStarting] = useState<boolean>(false);
   
   // Calculate crowns: 25 total tiles - mines - revealed tiles
   const crownsCount = 25 - minesCount - revealedTiles.length;
@@ -64,10 +64,12 @@ export default function MinesPage() {
   const handleStartGame = async () => {
     try {
       setErrorMessage('');
+      setIsStarting(true);
       const bet = parseFloat(betAmount);
       
       if (isNaN(bet) || bet <= 0) {
         setErrorMessage('Please enter a valid bet amount');
+        setIsStarting(false);
         return;
       }
 
@@ -82,8 +84,10 @@ export default function MinesPage() {
       
       // Update user balance
       setBalance(parseFloat(response.balance));
+      setIsStarting(false);
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to start game');
+      setIsStarting(false);
     }
   };
 
@@ -219,7 +223,6 @@ export default function MinesPage() {
 
     try {
       setErrorMessage('');
-      setRevealingTile(tilePosition);
       const response = await revealTile(gameId, tilePosition);
       
       if (response.game_over) {
@@ -255,7 +258,7 @@ export default function MinesPage() {
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to reveal tile');
     } finally {
-      setRevealingTile(null);
+      // no-op
     }
   };
 
@@ -415,12 +418,22 @@ export default function MinesPage() {
             <div className={styles.crowns_display}>
               {crownsCount}
             </div>
-            <button 
+              <button 
               className={`${styles.bet_section_button} ${styles.play_button_green}`}
               onClick={handlePlayClick}
-              disabled={isGameActive && revealedTiles.length === 0}
+              disabled={(isGameActive && revealedTiles.length === 0) || isStarting}
+              aria-busy={isStarting}
             >
-              {isGameActive ? 'Cashout' : 'Play'}
+              {isStarting ? (
+                <Image
+                  src="/assets/cardw.png"
+                  alt="Loading"
+                  width={24}
+                  height={24}
+                />
+              ) : (
+                isGameActive ? 'Cashout' : 'Play'
+              )}
             </button>
             <button 
               className={`${styles.bet_section_button} ${!isGameActive ? styles.disabled : ''}`}
@@ -452,7 +465,7 @@ export default function MinesPage() {
                 const isRevealed = revealedTiles.includes(i);
                 const isMine = minePositions.includes(i);
                 const showContent = gameOver || isRevealed;
-                const isRevealing = revealingTile === i;
+                // Removed tile-level loading; no revealing state per tile
                 
                 return (
                   <button
@@ -460,18 +473,10 @@ export default function MinesPage() {
                     className={`${styles.grid_tile} ${
                       isRevealed ? styles.revealed : ''
                     } ${isMine && gameOver ? styles.mine : ''}`}
-                    disabled={!isGameActive || gameOver || isRevealing}
+                    disabled={!isGameActive || gameOver}
                     onClick={() => handleTileClick(i)}
                   >
-                    {isRevealing ? (
-                      <Image
-                        src="/assets/cardw.png"
-                        alt="Loading"
-                        width={32}
-                        height={32}
-                        className={styles.tile_content}
-                      />
-                    ) : showContent ? (
+                    {showContent ? (
                       <span className={styles.tile_content}>
                         {isMine ? '💣' : '👑'}
                       </span>
