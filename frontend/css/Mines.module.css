@@ -482,7 +482,7 @@
     animation: hitPulse 0.5s ease;
 }
 
-.keno_number.keno_hit:hover {
+.keno_number.keno_hit:hover:not(:disabled) {
     background-color: #4ade80;
     border-color: #22c55e;
     transform: scale(1.05);

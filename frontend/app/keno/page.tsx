@@ -206,7 +206,16 @@ export default function KenoPage() {
 
   const handleQuickPick = () => {
     if (isGameActive || isAnimating) return;
-    
+    // Clear previous game state when performing a quick pick
+    setDrawnNumbers([]);
+    setMatches(0);
+    setMultiplier(0.00);
+    setNetGain('0.00');
+    setGameId(null);
+    setCurrentDrawIndex(0);
+    setFinalMultiplier(0);
+    setFinalNetGain('0.00');
+
     // Generate random numbers based on quickPickAmount (max 10)
     const amount = Math.min(quickPickAmount, 10);
     const numbers: number[] = [];
@@ -221,7 +230,16 @@ export default function KenoPage() {
 
   const handleAutoPick = () => {
     if (isGameActive || isAnimating || selectedNumbers.length >= 10) return;
-    
+    // Clear previous game state when auto picking (adding numbers)
+    setDrawnNumbers([]);
+    setMatches(0);
+    setMultiplier(0.00);
+    setNetGain('0.00');
+    setGameId(null);
+    setCurrentDrawIndex(0);
+    setFinalMultiplier(0);
+    setFinalNetGain('0.00');
+
     // Add one random number that hasn't been selected yet
     let random: number;
     do {
