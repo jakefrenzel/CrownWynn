@@ -16,6 +16,7 @@ import {
   type StartKenoGameResponse,
   type RecentWinItem,
 } from '@/lib/kenoApi';
+import api from '@/lib/axiosInstance';
 import { verify_keno_game } from '@/lib/kenoVerification';
 import { getSeedInfo, rerollSeed } from '@/lib/minesApi';
 
@@ -67,6 +68,7 @@ export default function KenoPage() {
   const [isStarting, setIsStarting] = useState<boolean>(false);
   const [finalMultiplier, setFinalMultiplier] = useState<number>(0);
   const [finalNetGain, setFinalNetGain] = useState<string>('0.00');
+  // Single source of truth: backend balance fetched at end
   // Helper to compute multiplier/net from local table
   const computeFinalFromTable = (spots: number, matches: number, bet: number) => {
     const mult = payoutTable[spots]?.[matches] ?? 0.0;
@@ -167,8 +169,8 @@ export default function KenoPage() {
       setFinalMultiplier(mult);
       setFinalNetGain(net);
       
-      // Update user balance
-      setBalance(parseFloat(response.balance));
+      // Immediately deduct the bet locally to avoid backend timing mismatches
+      setBalance(prev => parseFloat((prev - betNum).toFixed(2)));
       
       // Animate the drawn numbers one by one
       animateDrawnNumbers(response.drawn_numbers);
@@ -191,6 +193,17 @@ export default function KenoPage() {
     setIsAnimating(false);
     setIsGameActive(false);
     setIsStarting(false);
+
+    // Single source of truth: fetch authoritative backend balance immediately
+    try {
+      const res = await api.get('/api/user/balance/');
+      if (res?.data?.balance !== undefined) {
+        const b = parseFloat(res.data.balance);
+        if (!isNaN(b)) setBalance(Math.round(b * 100) / 100);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch final balance:', e);
+    }
     // Live calculation already set the correct final values during last draw step
     // Don't overwrite - keep the live result
     // Refresh game history
