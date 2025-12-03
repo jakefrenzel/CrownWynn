@@ -23,7 +23,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/login"); // only redirect if not logged in
+      router.replace("/auth/login"); // only redirect if not logged in
     }
   }, [loading, user, router]);
 
@@ -179,7 +179,7 @@ const handleThanks = async () => {
               <div 
                 className={styles.gameButton} 
                 id="game-mines"
-                onClick={() => router.push('/mines')}
+                onClick={() => router.push('/games/mines')}
                 style={{ cursor: 'pointer' }}
               >
                 Mines
@@ -187,7 +187,7 @@ const handleThanks = async () => {
               <div 
                 className={styles.gameButton} 
                 id="game-keno"
-                onClick={() => router.push('/keno')}
+                onClick={() => router.push('/games/keno')}
                 style={{ cursor: 'pointer' }}
               >
                 Keno

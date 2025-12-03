@@ -356,7 +356,7 @@ export default function RegisterPage() {
         <div className={styles.register_link_container}>
           <p className={styles.register_text}>
             Already have an account?{" "}
-            <Link href="/login" className={styles.register_link}>
+            <Link href="/auth/login" className={styles.register_link}>
               Sign in
             </Link>
           </p>

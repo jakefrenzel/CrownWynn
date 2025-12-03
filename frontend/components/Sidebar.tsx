@@ -36,11 +36,11 @@ export default function Sidebar() {
           <div className={styles.section}>
             <h3 className={styles.section_title}>Games</h3>
             <div className={styles.game_list}>
-              <Link className={styles.game_card} href="/mines" onClick={closeMenu}>
+              <Link className={styles.game_card} href="/games/mines" onClick={closeMenu}>
                 <div className={styles.game_icon}>💣</div>
                 <div className={styles.game_name}>Mines</div>
               </Link>
-              <Link className={styles.game_card} href="/keno" onClick={closeMenu}>
+              <Link className={styles.game_card} href="/games/keno" onClick={closeMenu}>
                 <div className={styles.game_icon}>🎱</div>
                 <div className={styles.game_name}>Keno</div>
               </Link>

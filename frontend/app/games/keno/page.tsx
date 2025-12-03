@@ -8,32 +8,45 @@ import { useUser } from '@/context/UserContext';
 import Image from 'next/image';
 import styles from '@/css/Mines.module.css';
 import {
-  startMinesGame,
-  revealTile,
-  cashout,
-  getActiveGame,
-  getGameHistory,
-  getSeedInfo,
-  rerollSeed,
-  getMinesStats,
-  getMinesRecentWins,
-  type StartGameResponse,
-  type MinesRecentWinItem,
-} from '@/lib/minesApi';
-import { verify_game } from '@/lib/minesVerification';
+  startKenoGame,
+  getActiveKenoGame,
+  getKenoGameHistory,
+  getKenoStats,
+  getRecentWins,
+  type StartKenoGameResponse,
+  type RecentWinItem,
+} from '@/lib/kenoApi';
+import api from '@/lib/axiosInstance';
+import { verify_keno_game } from '@/lib/kenoVerification';
+import { getSeedInfo, rerollSeed } from '@/lib/minesApi';
 
-export default function MinesPage() {
+export default function KenoPage() {
+    // Stake Medium mode payout table (user provided)
+    const payoutTable: { [spots: number]: { [hits: number]: number } } = {
+      1: {0: 0.40, 1: 2.75},
+      2: {0: 0.00, 1: 1.80, 2: 5.10},
+      3: {0: 0.00, 1: 0.00, 2: 2.80, 3: 50.00},
+      4: {0: 0.00, 1: 0.00, 2: 1.70, 3: 10.00, 4: 100.00},
+      5: {0: 0.00, 1: 0.00, 2: 1.40, 3: 4.00, 4: 14.00, 5: 390.00},
+      6: {0: 0.00, 1: 0.00, 2: 0.00, 3: 3.00, 4: 9.00, 5: 180.00, 6: 710.00},
+      7: {0: 0.00, 1: 0.00, 2: 0.00, 3: 2.00, 4: 7.00, 5: 30.00, 6: 400.00, 7: 800.00},
+      8: {0: 0.00, 1: 0.00, 2: 0.00, 3: 2.00, 4: 4.00, 5: 11.00, 6: 67.00, 7: 400.00, 8: 900.00},
+      9: {0: 0.00, 1: 0.00, 2: 0.00, 3: 2.00, 4: 2.50, 5: 5.00, 6: 15.00, 7: 100.00, 8: 500.00, 9: 1000.00},
+      10: {0: 0.00, 1: 0.00, 2: 0.00, 3: 1.60, 4: 2.00, 5: 4.00, 6: 7.00, 7: 26.00, 8: 100.00, 9: 500.00, 10: 1000.00}
+    };
+
   const { user, loading, setBalance } = useUser();
   const router = useRouter();
   const [betAmount, setBetAmount] = useState<string>('0.00');
-  const [minesCount, setMinesCount] = useState<number>(3);
+  const [spotsToSelect, setSpotsToSelect] = useState<number>(10);
+  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
+  const [drawnNumbers, setDrawnNumbers] = useState<number[]>([]);
+  const [matches, setMatches] = useState<number>(0);
   const [isGameActive, setIsGameActive] = useState<boolean>(false);
-  const [multiplier, setMultiplier] = useState<number>(1.00);
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const [multiplier, setMultiplier] = useState<number>(0.00);
   const [netGain, setNetGain] = useState<string>('0.00');
   const [gameId, setGameId] = useState<number | null>(null);
-  const [revealedTiles, setRevealedTiles] = useState<number[]>([]);
-  const [minePositions, setMinePositions] = useState<number[]>([]);
-  const [gameOver, setGameOver] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [gameHistory, setGameHistory] = useState<any[]>([]);
   const [showProvablyFair, setShowProvablyFair] = useState<boolean>(false);
@@ -45,17 +58,48 @@ export default function MinesPage() {
   const verificationResultRef = useRef<HTMLDivElement>(null);
   const [showStats, setShowStats] = useState<boolean>(false);
   const [stats, setStats] = useState<any>(null);
-  const [recentWins, setRecentWins] = useState<MinesRecentWinItem[]>([]);
-  const [isStarting, setIsStarting] = useState<boolean>(false);
-  const [isRevealing, setIsRevealing] = useState<boolean>(false);
-  const [isCashingOut, setIsCashingOut] = useState<boolean>(false);
+  const [currentDrawIndex, setCurrentDrawIndex] = useState<number>(0);
+  const [quickPickAmount, setQuickPickAmount] = useState<number>(10);
+  const [recentWins, setRecentWins] = useState<RecentWinItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState<boolean>(true);
   const [recentWinsLoading, setRecentWinsLoading] = useState<boolean>(true);
   const [initialHistoryLoad, setInitialHistoryLoad] = useState<boolean>(true);
   const [initialRecentWinsLoad, setInitialRecentWinsLoad] = useState<boolean>(true);
-  
-  // Calculate crowns: 25 total tiles - mines - revealed tiles
-  const crownsCount = 25 - minesCount - revealedTiles.length;
+  const [isStarting, setIsStarting] = useState<boolean>(false);
+  const [finalMultiplier, setFinalMultiplier] = useState<number>(0);
+  const [finalNetGain, setFinalNetGain] = useState<string>('0.00');
+  // Single source of truth: backend balance fetched at end
+  // Helper to compute multiplier/net from local table
+  const computeFinalFromTable = (spots: number, matches: number, bet: number) => {
+    const mult = payoutTable[spots]?.[matches] ?? 0.0;
+    // Calculate WIN AMOUNT (profit): total payout minus original bet
+    // If multiplier >= 1, there's a win; if < 1, it's a loss (but payout table uses 0 for losses)
+    const totalPayout = mult * bet;
+    const winAmount = totalPayout - bet;
+    // Only show positive wins; losses stay at 0
+    const displayWin = winAmount > 0 ? winAmount : 0;
+    return { mult, net: displayWin.toFixed(2) };
+  };
+
+  // Live update multiplier/net gain during draw animation
+  useEffect(() => {
+    if (!isAnimating) return;
+    if (currentDrawIndex === 0) return;
+    const bet = parseFloat(betAmount) || 0;
+    const spots = selectedNumbers.length;
+    const revealed = drawnNumbers.slice(0, currentDrawIndex);
+    const currentMatches = selectedNumbers.filter(n => revealed.includes(n)).length;
+    // Lookup interim multiplier from table
+    const mult = payoutTable[spots]?.[currentMatches] ?? 0.0;
+    setMultiplier(mult);
+    
+    // Calculate WIN AMOUNT (profit): total payout minus original bet
+    const totalPayout = mult * bet;
+    const winAmount = totalPayout - bet;
+    // Only show positive wins; losses or no-win stay at 0
+    const displayWin = winAmount > 0 ? winAmount : 0;
+    setNetGain(displayWin.toFixed(2));
+  }, [currentDrawIndex, isAnimating, betAmount, selectedNumbers, drawnNumbers, payoutTable]);
 
   const handleHalfBet = () => {
     const current = parseFloat(betAmount) || 0;
@@ -65,6 +109,28 @@ export default function MinesPage() {
   const handleDoubleBet = () => {
     const current = parseFloat(betAmount) || 0;
     setBetAmount((current * 2).toFixed(2));
+  };
+
+  const handleNumberClick = (number: number) => {
+    if (isGameActive || isAnimating) return;
+    
+    // Clear previous game results when modifying selections
+    setDrawnNumbers([]);
+    setMatches(0);
+    setMultiplier(0.00);
+    setNetGain('0.00');
+    setGameId(null);
+    setCurrentDrawIndex(0);
+    
+    if (selectedNumbers.includes(number)) {
+      // Deselect
+      setSelectedNumbers(selectedNumbers.filter(n => n !== number));
+    } else {
+      // Select only if under limit (max 10)
+      if (selectedNumbers.length < 10) {
+        setSelectedNumbers([...selectedNumbers, number].sort((a, b) => a - b));
+      }
+    }
   };
 
   const handleStartGame = async () => {
@@ -79,83 +145,138 @@ export default function MinesPage() {
         return;
       }
 
-      const response = await startMinesGame(bet, minesCount);
-      setGameId(response.game_id);
+      if (selectedNumbers.length === 0) {
+        setErrorMessage('Please select at least 1 number');
+        setIsStarting(false);
+        return;
+      }
+
       setIsGameActive(true);
-      setMultiplier(parseFloat(response.current_multiplier));
-      setRevealedTiles([]);
-      setMinePositions([]);
-      setGameOver(false);
+      setIsAnimating(true);
+      // Reset to 0 at start; will update live during animation
+      setCurrentDrawIndex(0);
+      setMultiplier(0.0);
       setNetGain('0.00');
+
+      const response = await startKenoGame(bet, selectedNumbers);
       
-      // Update user balance
-      setBalance(parseFloat(response.balance));
-      setIsStarting(false);
+      setGameId(response.game_id);
+      setDrawnNumbers(response.drawn_numbers);
+      setMatches(response.matches);
+      // Derive final from local table to keep UI consistent
+      const betNum = bet;
+      const { mult, net } = computeFinalFromTable(selectedNumbers.length, response.matches, betNum);
+      setFinalMultiplier(mult);
+      setFinalNetGain(net);
+      
+      // Immediately deduct the bet locally to avoid backend timing mismatches
+      setBalance(prev => parseFloat((prev - betNum).toFixed(2)));
+      
+      // Animate the drawn numbers one by one
+      animateDrawnNumbers(response.drawn_numbers);
+      
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to start game');
+      setIsGameActive(false);
+      setIsAnimating(false);
       setIsStarting(false);
     }
   };
 
-  const handleCashout = async () => {
-    if (!gameId) return;
-    
-    try {
-      setErrorMessage('');
-      setIsCashingOut(true);
-      const response = await cashout(gameId);
-      setIsGameActive(false);
-      setGameOver(true);
-      setMinePositions(response.mine_positions);
-      setNetGain(response.net_profit);
-      
-      // Update user balance
-      setBalance(parseFloat(response.balance));
-      
-      // Refresh game history
-      fetchGameHistory();
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.error || 'Failed to cashout');
-    } finally {
-      setIsCashingOut(false);
+  const animateDrawnNumbers = async (drawn: number[]) => {
+    for (let i = 0; i < drawn.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between each number
+      setCurrentDrawIndex(i + 1);
     }
+    
+    // After animation completes
+    setIsAnimating(false);
+    setIsGameActive(false);
+    setIsStarting(false);
+
+    // Single source of truth: fetch authoritative backend balance immediately
+    try {
+      const res = await api.get('/api/user/balance/');
+      if (res?.data?.balance !== undefined) {
+        const b = parseFloat(res.data.balance);
+        if (!isNaN(b)) setBalance(Math.round(b * 100) / 100);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch final balance:', e);
+    }
+    // Live calculation already set the correct final values during last draw step
+    // Don't overwrite - keep the live result
+    // Refresh game history
+    fetchGameHistory();
+    
+    // Keep drawn numbers and results visible until cleared
   };
 
-  const handlePlayClick = () => {
-    if (isGameActive) {
-      handleCashout();
-    } else {
-      handleStartGame();
+  const handleClearSelection = () => {
+    if (isGameActive || isAnimating) return;
+    setSelectedNumbers([]);
+    setDrawnNumbers([]);
+    setMatches(0);
+    setMultiplier(0.00);
+    setNetGain('0.00');
+    setGameId(null);
+    setCurrentDrawIndex(0);
+  };
+
+  const handleQuickPick = () => {
+    if (isGameActive || isAnimating) return;
+    // Clear previous game state when performing a quick pick
+    setDrawnNumbers([]);
+    setMatches(0);
+    setMultiplier(0.00);
+    setNetGain('0.00');
+    setGameId(null);
+    setCurrentDrawIndex(0);
+    setFinalMultiplier(0);
+    setFinalNetGain('0.00');
+
+    // Generate random numbers based on quickPickAmount (max 10)
+    const amount = Math.min(quickPickAmount, 10);
+    const numbers: number[] = [];
+    while (numbers.length < amount) {
+      const random = Math.floor(Math.random() * 40) + 1;
+      if (!numbers.includes(random)) {
+        numbers.push(random);
+      }
     }
+    setSelectedNumbers(numbers.sort((a, b) => a - b));
   };
 
   const handleAutoPick = () => {
-    if (!isGameActive || gameOver) return;
+    if (isGameActive || isAnimating || selectedNumbers.length >= 10) return;
+    // Clear previous game state when auto picking (adding numbers)
+    setDrawnNumbers([]);
+    setMatches(0);
+    setMultiplier(0.00);
+    setNetGain('0.00');
+    setGameId(null);
+    setCurrentDrawIndex(0);
+    setFinalMultiplier(0);
+    setFinalNetGain('0.00');
+
+    // Add one random number that hasn't been selected yet
+    let random: number;
+    do {
+      random = Math.floor(Math.random() * 40) + 1;
+    } while (selectedNumbers.includes(random));
     
-    // Get all unrevealed tiles (0-24, excluding already revealed)
-    const unrevealedTiles = Array.from({ length: 25 }, (_, i) => i)
-      .filter(i => !revealedTiles.includes(i));
-    
-    if (unrevealedTiles.length === 0) return;
-    
-    // Pick a random unrevealed tile
-    const randomIndex = Math.floor(Math.random() * unrevealedTiles.length);
-    const randomTile = unrevealedTiles[randomIndex];
-    
-    // Click that tile
-    handleTileClick(randomTile);
+    setSelectedNumbers([...selectedNumbers, random].sort((a, b) => a - b));
   };
 
   const handleVerifyGame = async () => {
     if (!selectedVerifyGame) return;
     
-    const result = await verify_game(
+    const result = await verify_keno_game(
       selectedVerifyGame.server_seed,
       selectedVerifyGame.server_seed_hash,
       selectedVerifyGame.client_seed,
       selectedVerifyGame.nonce,
-      selectedVerifyGame.mines_count,
-      selectedVerifyGame.mine_positions
+      selectedVerifyGame.drawn_numbers
     );
     
     setVerificationResult(result);
@@ -213,7 +334,7 @@ export default function MinesPage() {
 
   const openStatsModal = async () => {
     try {
-      const statsData = await getMinesStats();
+      const statsData = await getKenoStats();
       setStats(statsData);
       setShowStats(true);
     } catch (error) {
@@ -225,62 +346,15 @@ export default function MinesPage() {
     setShowStats(false);
   };
 
-  const handleTileClick = async (tilePosition: number) => {
-    if (!gameId || !isGameActive || gameOver || revealedTiles.includes(tilePosition)) {
-      return;
-    }
-
-    try {
-      setErrorMessage('');
-      setIsRevealing(true);
-      const response = await revealTile(gameId, tilePosition);
-      
-      if (response.game_over) {
-        // Hit a mine or completed game (auto-win or loss)
-        setIsGameActive(false);
-        setGameOver(true);
-        setMinePositions(response.mine_positions || []);
-        
-        if (response.hit_mine) {
-          setNetGain(response.net_profit || '0.00');
-        } else if (response.auto_win) {
-          // Auto-win when all safe tiles revealed
-          setNetGain(response.net_profit || '0.00');
-          setRevealedTiles(response.revealed_tiles || []);
-          setMultiplier(parseFloat(response.current_multiplier || '1.00'));
-        }
-        
-        // Update user balance
-        if (response.balance) {
-          setBalance(parseFloat(response.balance));
-        }
-        
-        // Refresh game history when game ends
-        fetchGameHistory();
-      } else {
-        // Safe tile revealed
-        setRevealedTiles(response.revealed_tiles || []);
-        setMultiplier(parseFloat(response.current_multiplier || '1.00'));
-        
-        const potentialProfit = (parseFloat(response.potential_payout || '0') - parseFloat(betAmount)).toFixed(2);
-        setNetGain(potentialProfit);
-      }
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.error || 'Failed to reveal tile');
-    } finally {
-      setIsRevealing(false);
-    }
-  };
-
   const fetchGameHistory = async () => {
     if (!user) return;
     
     try {
-      // Only show skeletons on very first load
+      // Show skeletons only on the very first load
       if (initialHistoryLoad) {
         setHistoryLoading(true);
       }
-      const response = await getGameHistory();
+      const response = await getKenoGameHistory();
       setGameHistory(response.games);
       if (initialHistoryLoad) {
         setInitialHistoryLoad(false);
@@ -298,7 +372,7 @@ export default function MinesPage() {
       if (initialRecentWinsLoad) {
         setRecentWinsLoading(true);
       }
-      const response = await getMinesRecentWins();
+      const response = await getRecentWins();
       setRecentWins(response.recent_wins);
       if (initialRecentWinsLoad) {
         setInitialRecentWinsLoad(false);
@@ -310,34 +384,10 @@ export default function MinesPage() {
     }
   };
 
-  // Check for active game on mount
+  // Load game history and seed info on mount
   useEffect(() => {
-    const checkActiveGame = async () => {
-      if (!user) return;
-      
-      try {
-        const response = await getActiveGame();
-        if (response.has_active_game && response.game_id) {
-          const bet = response.bet_amount || '0.00';
-          const mult = parseFloat(response.current_multiplier || '1.00');
-          
-          setGameId(response.game_id);
-          setIsGameActive(true);
-          setBetAmount(bet);
-          setMinesCount(response.mines_count || 3);
-          setRevealedTiles(response.revealed_tiles || []);
-          setMultiplier(mult);
-          
-          const potentialPayout = parseFloat(bet) * mult;
-          const potentialProfit = (potentialPayout - parseFloat(bet)).toFixed(2);
-          setNetGain(potentialProfit);
-        }
-      } catch (error) {
-        console.error('Failed to check for active game:', error);
-      }
-    };
+    if (!user) return;
     
-    checkActiveGame();
     fetchGameHistory();
     fetchSeedInfo();
     fetchRecentWins();
@@ -357,7 +407,7 @@ export default function MinesPage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/login");
+      router.replace("/auth/login");
     }
   }, [loading, user, router]);
 
@@ -440,31 +490,66 @@ export default function MinesPage() {
               </button>
             </div>
             <div className={styles.label_container}>
-              <div className={`${styles.label} ${styles.game_label}`}>Mines</div>
-            </div>
-            <select 
-              className={styles.mines_select}
-              value={minesCount}
-              onChange={(e) => setMinesCount(Number(e.target.value))}
-              disabled={isGameActive}
-            >
-              {Array.from({ length: 24 }, (_, i) => i + 1).map((num) => (
-                <option key={num} value={num}>{num}</option>
-              ))}
-            </select>
-            <div className={styles.label_container}>
-              <div className={`${styles.label} ${styles.game_label}`}>Crowns</div>
+              <div className={`${styles.label} ${styles.game_label}`}>Selected Numbers</div>
             </div>
             <div className={styles.crowns_display}>
-              {crownsCount}
+              {selectedNumbers.length} / 10
             </div>
+            <div className={styles.label_container}>
+              <div className={`${styles.label} ${styles.game_label}`}>Selection</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'stretch', marginTop: '10px', width: '100%' }}>
               <button 
-              className={`${styles.bet_section_button} ${styles.play_button_green}`}
-              onClick={handlePlayClick}
-              disabled={(isGameActive && revealedTiles.length === 0) || isStarting || isRevealing || isCashingOut}
-              aria-busy={isStarting || isRevealing || isCashingOut}
+                className={`${styles.bet_section_button} ${(isGameActive || isAnimating) ? styles.disabled : ''}`}
+                disabled={isGameActive || isAnimating}
+                onClick={handleQuickPick}
+                style={{ 
+                  borderRadius: '5px 0 0 5px',
+                  borderRight: 'none',
+                  margin: 0,
+                  flex: 1
+                }}
+              >
+                Quick Pick
+              </button>
+              <select
+                className={styles.mines_select}
+                value={quickPickAmount}
+                onChange={(e) => setQuickPickAmount(Number(e.target.value))}
+                disabled={isGameActive || isAnimating}
+                style={{
+                  borderRadius: '0 5px 5px 0',
+                  width: '70px',
+                  margin: 0,
+                  padding: '0 24px 0 8px'
+                }}
+              >
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
+                  <option key={num} value={num}>{num}</option>
+                ))}
+              </select>
+            </div>
+            <button 
+              className={`${styles.bet_section_button} ${(isGameActive || isAnimating || selectedNumbers.length >= 10) ? styles.disabled : ''}`}
+              disabled={isGameActive || isAnimating || selectedNumbers.length >= 10}
+              onClick={handleAutoPick}
             >
-              {(isStarting || isRevealing || isCashingOut) ? (
+              Auto Pick
+            </button>
+            <button 
+              className={`${styles.bet_section_button} ${(isGameActive || isAnimating) ? styles.disabled : ''}`}
+              disabled={isGameActive || isAnimating}
+              onClick={handleClearSelection}
+            >
+              Clear
+            </button>
+            <button 
+              className={`${styles.bet_section_button} ${styles.play_button_green}`}
+              onClick={handleStartGame}
+              disabled={isGameActive || isAnimating || isStarting || selectedNumbers.length === 0}
+              aria-busy={isStarting || isAnimating}
+            >
+              {(isStarting || isAnimating) ? (
                 <Image
                   src="/assets/cardw.png"
                   alt="Loading"
@@ -472,15 +557,8 @@ export default function MinesPage() {
                   height={24}
                 />
               ) : (
-                isGameActive ? 'Cashout' : 'Play'
+                'Play'
               )}
-            </button>
-            <button 
-              className={`${styles.bet_section_button} ${!isGameActive ? styles.disabled : ''}`}
-              disabled={!isGameActive || isRevealing}
-              onClick={handleAutoPick}
-            >
-              Auto Pick
             </button>
             <div className={styles.label_container}>
               <div className={`${styles.label} ${styles.game_label}`}>
@@ -500,30 +578,47 @@ export default function MinesPage() {
             </div>
           </div>
           <div className={styles.mines_container}>
-            <div className={styles.grid_container}>
-              {Array.from({ length: 25 }, (_, i) => {
-                const isRevealed = revealedTiles.includes(i);
-                const isMine = minePositions.includes(i);
-                const showContent = gameOver || isRevealed;
-                
+            <div className={styles.keno_board}>
+              {Array.from({ length: 40 }, (_, i) => i + 1).map((num) => {
+                const isSelected = selectedNumbers.includes(num);
+                const isDrawn = drawnNumbers.slice(0, currentDrawIndex).includes(num);
+                const isHit = isSelected && isDrawn;
                 return (
                   <button
-                    key={i}
-                    className={`${styles.grid_tile} ${
-                      isRevealed ? styles.revealed : ''
-                    } ${isMine && gameOver ? styles.mine : ''}`}
-                    disabled={!isGameActive || gameOver}
-                    onClick={() => handleTileClick(i)}
-                    style={{ pointerEvents: isRevealing ? 'none' : 'auto' }}
+                    key={num}
+                    className={`${styles.keno_number} ${
+                      isSelected ? styles.keno_selected : ''
+                    } ${isDrawn ? styles.keno_drawn : ''} ${
+                      isHit ? styles.keno_hit : ''
+                    }`}
+                    onClick={() => {
+                      if (!isGameActive && !isAnimating) {
+                        handleNumberClick(num);
+                      }
+                    }}
+                    style={{ pointerEvents: (isGameActive || isAnimating) ? 'none' : 'auto' }}
                   >
-                    {showContent ? (
-                      <span className={styles.tile_content}>
-                        {isMine ? '💣' : '👑'}
-                      </span>
-                    ) : null}
+                    {isHit ? '👑' : num}
                   </button>
                 );
               })}
+            </div>
+            {/* Dynamic payout table below the grid */}
+            <div className={styles.payout_wrapper}>
+              {selectedNumbers.length === 0 ? (
+                <div className={styles.payout_empty}>
+                  Select 1-10 numbers to play
+                </div>
+              ) : (
+                <div className={styles.payout_boxes}>
+                  {Object.entries(payoutTable[selectedNumbers.length] || {}).map(([hits, mult]) => (
+                    <div key={hits} className={styles.payout_box} data-active={Number(mult) > 0}>
+                      <span className={styles.payout_hits}>{hits}x</span>
+                      <span className={styles.payout_mult}>{Number(mult).toFixed(2)}x</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -545,8 +640,8 @@ export default function MinesPage() {
               <div className={styles.history_table_header}>
                 <div className={styles.col_game}>Game</div>
                 <div className={styles.col_bet}>Bet</div>
-                <div className={styles.col_mines}>Mines</div>
-                <div className={styles.col_tiles}>Tiles</div>
+                <div className={styles.col_mines}>Spots</div>
+                <div className={styles.col_tiles}>Hits</div>
                 <div className={styles.col_multiplier}>Multiplier</div>
                 <div className={styles.col_payout}>Payout</div>
                 <div className={styles.col_profit}>Net Profit</div>
@@ -575,11 +670,11 @@ export default function MinesPage() {
             </div>
           ) : (
             <div className={styles.history_table_wrapper}>
-              <div className={styles.history_table_header}>
+                <div className={styles.history_table_header}>
                 <div className={styles.col_game}>Game</div>
                 <div className={styles.col_bet}>Bet</div>
-                <div className={styles.col_mines}>Mines</div>
-                <div className={styles.col_tiles}>Tiles</div>
+                <div className={styles.col_mines}>Spots</div>
+                <div className={styles.col_tiles}>Hits</div>
                 <div className={styles.col_multiplier}>Multiplier</div>
                 <div className={styles.col_payout}>Payout</div>
                 <div className={styles.col_profit}>Net Profit</div>
@@ -600,8 +695,8 @@ export default function MinesPage() {
                         #{game.game_id}
                       </div>
                       <div className={styles.col_bet}>{game.bet_amount} 👑</div>
-                      <div className={styles.col_mines}>{game.mines_count}</div>
-                      <div className={styles.col_tiles}>{game.tiles_revealed}</div>
+                      <div className={styles.col_mines}>{game.spots_selected}</div>
+                      <div className={styles.col_tiles}>{game.matches}</div>
                       <div className={styles.col_multiplier}>{game.multiplier}x</div>
                       <div className={styles.col_payout}>{game.payout} 👑</div>
                       <div className={`${styles.col_profit} ${netProfit >= 0 ? styles.profit : styles.loss}`}>
@@ -766,7 +861,7 @@ export default function MinesPage() {
                 >
                   {gameHistory.map((game) => (
                     <option key={game.game_id} value={game.game_id}>
-                      Game #{game.game_id} - {game.status === 'won' ? `Won ${game.payout}` : `Lost ${game.bet_amount}`} 👑
+                      Game #{game.game_id} - {game.spots_selected} Spots, {game.matches} Hits - {game.status === 'won' ? `Won ${game.payout}` : `Lost ${game.bet_amount}`} 👑
                     </option>
                   ))}
                 </select>
@@ -796,8 +891,13 @@ export default function MinesPage() {
                     </div>
 
                     <div className={styles.seed_item}>
-                      <span className={styles.seed_label}>Mines Count:</span>
-                      <span className={styles.seed_value}>{selectedVerifyGame.mines_count}</span>
+                      <span className={styles.seed_label}>Numbers Selected:</span>
+                      <span className={styles.seed_value}>{selectedVerifyGame.numbers_selected?.join(', ')}</span>
+                    </div>
+
+                    <div className={styles.seed_item}>
+                      <span className={styles.seed_label}>Drawn Numbers:</span>
+                      <span className={styles.seed_value}>{selectedVerifyGame.drawn_numbers?.join(', ')}</span>
                     </div>
                   </div>
 
@@ -820,30 +920,18 @@ export default function MinesPage() {
                       
                       <p className={styles.result_text}>
                         {verificationResult.isValid 
-                          ? 'Regenerated mine positions match the actual game mines.'
-                          : 'Mine positions do not match. This game may have been tampered with.'}
+                          ? 'Regenerated drawn numbers match the actual game results.'
+                          : 'Drawn numbers do not match. This game may have been tampered with.'}
                       </p>
 
-                      <div className={styles.mine_grid}>
-                        <div className={styles.grid_title}>Mine Positions:</div>
-                        <div className={styles.verification_grid}>
-                          {Array.from({ length: 25 }, (_, i) => {
-                            const isMine = selectedVerifyGame.mine_positions.includes(i);
-                            const wasRevealed = selectedVerifyGame.revealed_tiles.includes(i);
-                            
-                            return (
-                              <div
-                                key={i}
-                                className={`${styles.verify_tile} ${
-                                  isMine ? styles.verify_mine : ''
-                                } ${wasRevealed && !isMine ? styles.verify_revealed : ''}`}
-                              >
-                                {isMine ? '💣' : wasRevealed ? '👑' : ''}
-                              </div>
-                            );
-                          })}
+                      {verificationResult.regeneratedDrawnNumbers && (
+                        <div className={styles.mine_grid}>
+                          <div className={styles.grid_title}>Regenerated Drawn Numbers:</div>
+                          <div className={styles.seed_value} style={{ padding: '12px', marginTop: '8px' }}>
+                            {verificationResult.regeneratedDrawnNumbers.join(', ')}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
                 </>
@@ -858,7 +946,7 @@ export default function MinesPage() {
         <div className={styles.modal_overlay} onClick={closeStatsModal}>
           <div className={styles.modal_content} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modal_header}>
-              <h2 className={styles.modal_title}>Mines Statistics</h2>
+              <h2 className={styles.modal_title}>Keno Statistics</h2>
               <button className={styles.modal_close} onClick={closeStatsModal}>✕</button>
             </div>
 

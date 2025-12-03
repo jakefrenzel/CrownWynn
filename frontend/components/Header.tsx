@@ -157,8 +157,8 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
                     </>
                 ) : (
                     <>
-                        <Link href="/login" className={styles.login_button}>Login</Link>
-                        <Link href="/register" className={styles.header_button}>Register</Link>
+                        <Link href="/auth/login" className={styles.login_button}>Login</Link>
+                        <Link href="/auth/register" className={styles.header_button}>Register</Link>
                     </>
                 )}
             </div>

@@ -75,7 +75,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       setWelcomeBonusClaimed(false);
       
       // Redirect to login page
-      window.location.href = '/login';
+      window.location.href = '/auth/login';
       
       console.log("Logged out successfully");
     } catch (err) {
@@ -84,7 +84,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       setUser(null);
       setBalance(0);
       setWelcomeBonusClaimed(false);
-      window.location.href = '/login';
+      window.location.href = '/auth/login';
     }
   };
 
@@ -92,7 +92,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     const fetchUser = async () => {
       try {
         // Only fetch user if not on auth pages
-        if (pathname?.startsWith("/login") || pathname?.startsWith("/register")) {
+        if (pathname?.startsWith("/auth/login") || pathname?.startsWith("/auth/register")) {
           setLoading(false);
           return;
         } else {
