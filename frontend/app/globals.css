@@ -62,3 +62,103 @@ body {
   color: var(--text-color);
   overscroll-behavior: none;
 }
+
+/* Centered page loader used during auth checks */
+.page_loader {
+  color: var(--white); /* ensure pure white for loader text */
+  font-size: 1.5rem; /* slightly larger for emphasis */
+  font-weight: 700;
+}
+
+/* Inline loader layout and spinner */
+.page_loader .loader_inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  line-height: 1; /* prevent baseline misalignment */
+}
+.loader_spinner {
+  animation: spinnerRotate 1s linear infinite;
+  display: inline-block; /* align as inline element next to text */
+  transform-origin: 50% 50%;
+  transform-box: fill-box;
+  will-change: transform;
+  vertical-align: middle; /* align with adjacent text */
+}
+@keyframes spinnerRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Small contextual text under the spinner for clarity */
+.loader_text {
+  display: inline-block;
+  margin-top: 0;
+  color: var(--white);
+  opacity: 0.95;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1;
+  vertical-align: middle; /* align with adjacent spinner */
+}
+
+/* Skeleton loaders */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.12); /* slightly stronger ghost fill */
+  border: 1px solid rgba(255,255,255,0.10); /* gentle outline */
+  border-radius: 6px;
+  display: block; /* ensure height/width apply to inline elements like <span> */
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.12) 50%,
+    rgba(255,255,255,0) 100%
+  );
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+.skeleton_text {
+  height: 14px;
+}
+.skeleton_block {
+  height: 36px;
+}
+.skeleton_row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr; /* matches table */
+  gap: 12px;
+  align-items: center;
+}
+
+/* Elegant line skeletons for a less boxy look */
+.skeleton_line {
+  height: 14px; /* taller so it reads as a bar */
+  width: 100%;
+  min-width: 40%; /* avoid collapsing into a thin mark */
+  border-radius: 999px;
+  margin: 6px 0; /* give breathing space inside the cell */
+}
+.skeleton_pill {
+  height: 16px;
+  width: 75%;
+  min-width: 40%;
+  border-radius: 999px;
+  margin: 6px 0;
+}
+.skeleton_avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

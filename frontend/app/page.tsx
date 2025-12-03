@@ -48,9 +48,29 @@ export default function Home() {
 
   if (loading) {
     // 🌀 Show a loader instead of flashing page content
-    return <div className="flex items-center justify-center h-screen">Loading content...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen page_loader" role="status" aria-live="polite">
+        <div className="loader_inline" role="status" aria-live="polite">
+          <svg className="loader_spinner" width="28" height="28" viewBox="0 0 50 50" aria-hidden="true">
+            <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="5"></circle>
+            <path d="M45 25a20 20 0 0 1-20 20" fill="none" stroke="white" strokeWidth="5" strokeLinecap="round"></path>
+          </svg>
+          <span className="loader_text">Checking session…</span>
+        </div>
+      </div>
+    );
   }
-  if (!user) return <div className="flex items-center justify-center h-screen">Loading user...</div>;;
+  if (!user) return (
+    <div className="flex items-center justify-center h-screen page_loader" role="status" aria-live="polite">
+      <div className="loader_inline" role="status" aria-live="polite">
+        <svg className="loader_spinner" width="28" height="28" viewBox="0 0 50 50" aria-hidden="true">
+          <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="5"></circle>
+          <path d="M45 25a20 20 0 0 1-20 20" fill="none" stroke="white" strokeWidth="5" strokeLinecap="round"></path>
+        </svg>
+        <span className="loader_text">Checking session…</span>
+      </div>
+    </div>
+  );;
 
  const addBalance = async (): Promise<void> => {
   const amount = 100;

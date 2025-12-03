@@ -60,6 +60,10 @@ export default function KenoPage() {
   const [currentDrawIndex, setCurrentDrawIndex] = useState<number>(0);
   const [quickPickAmount, setQuickPickAmount] = useState<number>(10);
   const [recentWins, setRecentWins] = useState<RecentWinItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState<boolean>(true);
+  const [recentWinsLoading, setRecentWinsLoading] = useState<boolean>(true);
+  const [initialHistoryLoad, setInitialHistoryLoad] = useState<boolean>(true);
+  const [initialRecentWinsLoad, setInitialRecentWinsLoad] = useState<boolean>(true);
   const [isStarting, setIsStarting] = useState<boolean>(false);
   const [finalMultiplier, setFinalMultiplier] = useState<number>(0);
   const [finalNetGain, setFinalNetGain] = useState<string>('0.00');
@@ -333,19 +337,37 @@ export default function KenoPage() {
     if (!user) return;
     
     try {
+      // Show skeletons only on the very first load
+      if (initialHistoryLoad) {
+        setHistoryLoading(true);
+      }
       const response = await getKenoGameHistory();
       setGameHistory(response.games);
+      if (initialHistoryLoad) {
+        setInitialHistoryLoad(false);
+      }
     } catch (error) {
       console.error('Failed to fetch game history:', error);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
   const fetchRecentWins = async () => {
     try {
+      // Avoid skeleton flash during refresh; only show on very first load
+      if (initialRecentWinsLoad) {
+        setRecentWinsLoading(true);
+      }
       const response = await getRecentWins();
       setRecentWins(response.recent_wins);
+      if (initialRecentWinsLoad) {
+        setInitialRecentWinsLoad(false);
+      }
     } catch (error) {
       console.error('Failed to fetch recent wins:', error);
+    } finally {
+      setRecentWinsLoading(false);
     }
   };
 
@@ -379,8 +401,14 @@ export default function KenoPage() {
   // Show loading state while checking authentication
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
+      <div className="flex items-center justify-center h-screen page_loader" role="status" aria-live="polite">
+        <div className="loader_inline" role="status" aria-live="polite">
+          <svg className="loader_spinner" width="28" height="28" viewBox="0 0 50 50" aria-hidden="true">
+            <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="5"></circle>
+            <path d="M45 25a20 20 0 0 1-20 20" fill="none" stroke="white" strokeWidth="5" strokeLinecap="round"></path>
+          </svg>
+          <span className="loader_text">Preparing Game…</span>
+        </div>
       </div>
     );
   }
@@ -388,8 +416,14 @@ export default function KenoPage() {
   // Show loading state if user is not authenticated (before redirect)
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        Redirecting to login...
+      <div className="flex items-center justify-center h-screen page_loader" role="status" aria-live="polite">
+        <div className="loader_inline" role="status" aria-live="polite">
+          <svg className="loader_spinner" width="28" height="28" viewBox="0 0 50 50" aria-hidden="true">
+            <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="5"></circle>
+            <path d="M45 25a20 20 0 0 1-20 20" fill="none" stroke="white" strokeWidth="5" strokeLinecap="round"></path>
+          </svg>
+          <span className="loader_text">Preparing Game…</span>
+        </div>
       </div>
     );
   }
@@ -588,7 +622,36 @@ export default function KenoPage() {
             </button>
           </div>
 
-          {gameHistory.length === 0 ? (
+          {(initialHistoryLoad && historyLoading) ? (
+            <div className={styles.history_table_wrapper}>
+              <div className={styles.history_table_header}>
+                <div className={styles.col_game}>Game</div>
+                <div className={styles.col_bet}>Bet</div>
+                <div className={styles.col_mines}>Spots</div>
+                <div className={styles.col_tiles}>Hits</div>
+                <div className={styles.col_multiplier}>Multiplier</div>
+                <div className={styles.col_payout}>Payout</div>
+                <div className={styles.col_profit}>Net Profit</div>
+                <div className={styles.col_date}>Date</div>
+              </div>
+              <div className={styles.history_scroll_container}>
+                <div className={styles.history_list}>
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <div key={idx} className={styles.history_row}>
+                      <div className={styles.col_game}><span className="skeleton skeleton_pill" style={{ width: '60%' }}></span></div>
+                      <div className={styles.col_bet}><span className="skeleton skeleton_line" style={{ width: '50%' }}></span></div>
+                      <div className={styles.col_mines}><span className="skeleton skeleton_line" style={{ width: '40%' }}></span></div>
+                      <div className={styles.col_tiles}><span className="skeleton skeleton_line" style={{ width: '40%' }}></span></div>
+                      <div className={styles.col_multiplier}><span className="skeleton skeleton_line" style={{ width: '55%' }}></span></div>
+                      <div className={styles.col_payout}><span className="skeleton skeleton_line" style={{ width: '50%' }}></span></div>
+                      <div className={styles.col_profit}><span className="skeleton skeleton_line" style={{ width: '60%' }}></span></div>
+                      <div className={styles.col_date}><span className="skeleton skeleton_line" style={{ width: '70%' }}></span></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : gameHistory.length === 0 ? (
             <div className={styles.no_history}>
               <p>No games played yet. Start playing to see your history!</p>
             </div>
@@ -649,7 +712,32 @@ export default function KenoPage() {
             <h2 className={styles.history_title}>Recent Wins</h2>
           </div>
 
-          {recentWins.length === 0 ? (
+          {(initialRecentWinsLoad && recentWinsLoading) ? (
+            <div className={styles.history_table_wrapper}>
+              <div className={styles.recent_wins_header}>
+                <div className={styles.col_game}>Player</div>
+                <div className={styles.col_bet}>Bet</div>
+                <div className={styles.col_multiplier}>Multiplier</div>
+                <div className={styles.col_payout}>Payout</div>
+                <div className={styles.col_profit}>Profit</div>
+                <div className={styles.col_date}>Date</div>
+              </div>
+              <div className={styles.recent_wins_scroll}>
+                <div className={styles.history_list}>
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <div key={idx} className={styles.recent_wins_row}>
+                      <div className={styles.col_game}><span className="skeleton skeleton_pill" style={{ width: '50%' }}></span></div>
+                      <div className={styles.col_bet}><span className="skeleton skeleton_line" style={{ width: '50%' }}></span></div>
+                      <div className={styles.col_multiplier}><span className="skeleton skeleton_line" style={{ width: '55%' }}></span></div>
+                      <div className={styles.col_payout}><span className="skeleton skeleton_line" style={{ width: '55%' }}></span></div>
+                      <div className={styles.col_profit}><span className="skeleton skeleton_line" style={{ width: '60%' }}></span></div>
+                      <div className={styles.col_date}><span className="skeleton skeleton_line" style={{ width: '70%' }}></span></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : recentWins.length === 0 ? (
             <div className={styles.no_history}>
               <p>No recent wins yet. Be the first!</p>
             </div>
