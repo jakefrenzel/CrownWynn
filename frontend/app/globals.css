@@ -162,3 +162,16 @@ body {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+.loading_spinner_icon {
+  display: inline-block;
+}
+
+.loading_spinner_icon img {
+  animation: imageShimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes imageShimmer {
+  0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6)); }
+}

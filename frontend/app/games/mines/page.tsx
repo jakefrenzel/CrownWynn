@@ -49,6 +49,7 @@ export default function MinesPage() {
   const [isStarting, setIsStarting] = useState<boolean>(false);
   const [isRevealing, setIsRevealing] = useState<boolean>(false);
   const [isCashingOut, setIsCashingOut] = useState<boolean>(false);
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [historyLoading, setHistoryLoading] = useState<boolean>(true);
   const [recentWinsLoading, setRecentWinsLoading] = useState<boolean>(true);
   const [initialHistoryLoad, setInitialHistoryLoad] = useState<boolean>(true);
@@ -464,13 +465,15 @@ export default function MinesPage() {
               disabled={(isGameActive && revealedTiles.length === 0) || isStarting || isRevealing || isCashingOut}
               aria-busy={isStarting || isRevealing || isCashingOut}
             >
-              {(isStarting || isRevealing || isCashingOut) ? (
-                <Image
-                  src="/assets/cardw.png"
-                  alt="Loading"
-                  width={24}
-                  height={24}
-                />
+              {(isStarting || isAnimating) ? (
+                <div className="loading_spinner_icon">
+                  <Image
+                    src="/assets/cardw.png"
+                    alt="Loading"
+                    width={24}
+                    height={24}
+                  />
+                </div>
               ) : (
                 isGameActive ? 'Cashout' : 'Play'
               )}

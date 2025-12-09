@@ -550,12 +550,14 @@ export default function KenoPage() {
               aria-busy={isStarting || isAnimating}
             >
               {(isStarting || isAnimating) ? (
-                <Image
-                  src="/assets/cardw.png"
-                  alt="Loading"
-                  width={24}
-                  height={24}
-                />
+                <div className="loading_spinner_icon">
+                  <Image
+                    src="/assets/cardw.png"
+                    alt="Loading"
+                    width={24}
+                    height={24}
+                  />
+                </div>
               ) : (
                 'Play'
               )}
