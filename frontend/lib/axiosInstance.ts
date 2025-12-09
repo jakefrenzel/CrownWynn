@@ -54,9 +54,9 @@ axiosInstance.interceptors.response.use(
       } catch (refreshErr) {
         console.warn("Token refresh failed", refreshErr);
         // Redirect to login if not already on an auth page
-        const publicPaths = ["/login", "/register"]; 
+        const publicPaths = ["/auth/login", "/auth/register"]; 
         if (typeof window !== "undefined" && !publicPaths.includes(window.location.pathname)) {
-          window.location.replace("/login");
+          window.location.replace("/auth/login");
         }
       }
     }
