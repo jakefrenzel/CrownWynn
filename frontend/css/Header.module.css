@@ -191,3 +191,17 @@
     margin: 0;
     line-height: 1.6;
 }
+
+.daily_spinner {
+    display: inline-block;
+    animation: spinnerRotate 1s linear infinite;
+}
+
+@keyframes spinnerRotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

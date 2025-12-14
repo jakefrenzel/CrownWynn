@@ -19,6 +19,7 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
     const [timeRemaining, setTimeRemaining] = useState(0);
     const [showDailyModal, setShowDailyModal] = useState(false);
     const [dailyMessage, setDailyMessage] = useState('');
+    const [isClaiming, setIsClaiming] = useState(false);
 
     const handleLogout = async () => {
         await logout();
@@ -83,6 +84,7 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
     }, [timeRemaining]);
 
     const handleClaimDaily = async () => {
+        setIsClaiming(true);
         try {
             const response = await claimDailyReward();
             setDailyMessage(response.message);
@@ -93,6 +95,8 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
         } catch (err: any) {
             setDailyMessage(err.response?.data?.error || 'Failed to claim daily reward');
             setShowDailyModal(true);
+        } finally {
+            setIsClaiming(false);
         }
     };
 
@@ -138,13 +142,19 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
                         <button 
                             onClick={handleClaimDaily} 
                             className={styles.header_button}
-                            disabled={!canClaim}
+                            disabled={!canClaim || isClaiming}
                             style={{
-                                opacity: canClaim ? 1 : 0.6,
-                                cursor: canClaim ? 'pointer' : 'not-allowed'
+                                opacity: (canClaim && !isClaiming) ? 1 : 0.6,
+                                cursor: (canClaim && !isClaiming) ? 'pointer' : 'not-allowed',
+                                position: 'relative'
                             }}
                         >
-                            {canClaim ? 'Daily' : formatTimeRemaining(timeRemaining)}
+                            {isClaiming ? (
+                                <svg className={styles.daily_spinner} width="16" height="16" viewBox="0 0 50 50">
+                                    <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="4"></circle>
+                                    <path d="M45 25a20 20 0 0 1-20 20" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round"></path>
+                                </svg>
+                            ) : canClaim ? 'Daily' : formatTimeRemaining(timeRemaining)}
                         </button>
                         {onStatsClick && (
                             <button onClick={onStatsClick} className={styles.header_button}>
