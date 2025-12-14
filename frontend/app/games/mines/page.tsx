@@ -707,6 +707,28 @@ export default function MinesPage() {
             </div>
           )}
         </div>
+
+        {/* Mines Info Section */}
+        <div className={styles.info_section}>
+          <h2 className={styles.info_title}>About Mines</h2>
+          <p className={styles.info_text}>
+            Mines is a high-risk, high-reward game on a 5×5 grid of 25 tiles. Choose 1-24 mines, then reveal tiles to increase your multiplier. Cash out anytime to secure winnings or risk hitting a mine and losing your bet.
+          </p>
+          <h3 className={styles.info_subtitle}>How to Play</h3>
+          <ul className={styles.info_list}>
+            <li>Choose your bet and set the number of mines.</li>
+            <li>Press Play, then click tiles to reveal crowns (safe spots).</li>
+            <li>Each safe tile increases your multiplier and potential profit.</li>
+            <li>Press Cashout to lock in winnings before hitting a mine.</li>
+            <li>Use Game History to review results and verify fairness.</li>
+          </ul>
+          <h3 className={styles.info_subtitle}>Tips</h3>
+          <ul className={styles.info_list}>
+            <li>More mines mean higher multipliers but greater risk.</li>
+            <li>Develop a cashout strategy—don’t wait too long.</li>
+            <li>Use smaller bets while experimenting with strategies.</li>
+          </ul>
+        </div>
       </section>
 
       {/* Provably Fair Modal */}

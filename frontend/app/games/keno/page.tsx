@@ -801,6 +801,36 @@ export default function KenoPage() {
             </div>
           )}
         </div>
+
+        {/* Keno Info Section */}
+        <div className={styles.info_section}>
+          <h2 className={styles.info_title}>About Keno</h2>
+          <p className={styles.info_text}>
+            Keno is a lottery-inspired game of chance. Select 1–10 numbers, place your bet, and watch as 20 numbers are drawn at random. Your winnings are determined by how many of your picks match the drawn numbers, with payout multipliers that increase based on your selection size and hit count.
+          </p>
+          
+          <h3 className={styles.info_subtitle}>How to Play</h3>
+          <ul className={styles.info_list}>
+            <li><strong>Select Numbers:</strong> Pick 1–10 numbers on the board. Use Quick Pick to auto-select, or Auto Pick to add one at a time.</li>
+            <li><strong>Place Your Bet:</strong> Enter your bet amount. Use the ½ and 2× buttons to adjust quickly.</li>
+            <li><strong>Play:</strong> Press the Play button to start. Your bet is deducted immediately.</li>
+            <li><strong>Watch the Draw:</strong> Numbers reveal one-by-one. Your matched numbers display a crown (👑).</li>
+            <li><strong>Collect Winnings:</strong> Once all 20 numbers are drawn, your payout multiplier is applied and winnings are credited.</li>
+          </ul>
+          
+          <h3 className={styles.info_subtitle}>Payout Structure</h3>
+          <p className={styles.info_text}>
+            Payouts scale dynamically based on the number of spots you choose and how many hits you achieve. The payout table below the grid shows your potential multipliers. More spots generally mean higher multipliers but lower odds of hitting all selections. Balance risk and reward based on your strategy.
+          </p>
+          
+          <h3 className={styles.info_subtitle}>Tips & Strategy</h3>
+          <ul className={styles.info_list}>
+            <li><strong>Risk vs Reward:</strong> 1–3 spots offer better odds with modest payouts. 8–10 spots offer massive multipliers but lower hit chances.</li>
+            <li><strong>Study the Table:</strong> Check the payout multipliers for each hit count before playing to understand your expected returns.</li>
+            <li><strong>Manage Your Bankroll:</strong> Start with smaller bets to get a feel for the game before increasing stakes.</li>
+            <li><strong>Verify Fairness:</strong> Use the Provably Fair system to verify any game's outcome and ensure integrity.</li>
+          </ul>
+        </div>
       </section>
 
       {/* Provably Fair Modal */}
