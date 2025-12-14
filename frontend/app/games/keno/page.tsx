@@ -55,6 +55,7 @@ export default function KenoPage() {
   const [currentClientSeed, setCurrentClientSeed] = useState<string>('');
   const [seedGamesPlayed, setSeedGamesPlayed] = useState<number>(0);
   const [nextServerSeedHash, setNextServerSeedHash] = useState<string>('');
+  const [isRerolling, setIsRerolling] = useState<boolean>(false);
   const verificationResultRef = useRef<HTMLDivElement>(null);
   const [showStats, setShowStats] = useState<boolean>(false);
   const [stats, setStats] = useState<any>(null);
@@ -306,12 +307,15 @@ export default function KenoPage() {
       return;
     }
     
+    setIsRerolling(true);
     try {
       const response = await rerollSeed();
       setCurrentClientSeed(response.client_seed);
       setSeedGamesPlayed(response.seed_games_played);
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to reroll seed');
+    } finally {
+      setIsRerolling(false);
     }
   };
 
@@ -870,9 +874,20 @@ export default function KenoPage() {
                 <button 
                   className={styles.reroll_button}
                   onClick={handleRerollSeed}
-                  disabled={isGameActive}
+                  disabled={isGameActive || isRerolling}
+                  style={{
+                    opacity: (isGameActive || isRerolling) ? 0.6 : 1,
+                    cursor: (isGameActive || isRerolling) ? 'not-allowed' : 'pointer',
+                    position: 'relative'
+                  }}
                 >
-                  {isGameActive ? 'Cannot reroll during game' : 'Reroll Client Seed'}
+                  {isRerolling ? (
+                    <svg width="16" height="16" viewBox="0 0 50 50" style={{ display: 'inline-block', marginRight: '8px', animation: 'spinnerRotate 1s linear infinite' }}>
+                      <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="4"></circle>
+                      <path d="M45 25a20 20 0 0 1-20 20" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round"></path>
+                    </svg>
+                  ) : null}
+                  {isGameActive ? 'Cannot reroll during game' : isRerolling ? 'Rerolling...' : 'Reroll Client Seed'}
                 </button>
               </div>
 
