@@ -998,59 +998,87 @@ export default function KenoPage() {
             </div>
 
             <div className={styles.stats_container}>
-              <div className={styles.stats_grid}>
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_label}>Games Played</div>
-                  <div className={styles.stat_value}>{stats.games_played}</div>
-                </div>
-                
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_label}>Win Rate</div>
-                  <div className={styles.stat_value}>{stats.win_rate}%</div>
-                </div>
-                
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_label}>Games Won</div>
-                  <div className={styles.stat_value_success}>{stats.games_won}</div>
-                </div>
-                
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_label}>Games Lost</div>
-                  <div className={styles.stat_value_danger}>{stats.games_lost}</div>
-                </div>
-                
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_label}>Total Wagered</div>
-                  <div className={styles.stat_value}>{stats.total_wagered} 👑</div>
-                </div>
-                
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_label}>Total Profit</div>
-                  <div className={parseFloat(stats.total_profit) >= 0 ? styles.stat_value_success : styles.stat_value_danger}>
-                    {parseFloat(stats.total_profit) >= 0 ? '+' : ''}{stats.total_profit} 👑
+              {/* Overall Performance Section */}
+              <div className={styles.stats_section}>
+                <h3 className={styles.stats_section_title}>Overall Performance</h3>
+                <div className={styles.stats_grid}>
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Games Played</div>
+                    <div className={styles.stat_value}>{stats.games_played}</div>
+                  </div>
+                  
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Win Rate</div>
+                    <div className={stats.win_rate >= 50 ? styles.stat_value_success : styles.stat_value_danger}>{stats.win_rate}%</div>
+                  </div>
+                  
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Games Won</div>
+                    <div className={styles.stat_value_success}>{stats.games_won}</div>
+                  </div>
+                  
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Games Lost</div>
+                    <div className={styles.stat_value_danger}>{stats.games_lost}</div>
                   </div>
                 </div>
-                
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_label}>Biggest Win</div>
-                  <div className={styles.stat_value_success}>{stats.biggest_win} 👑</div>
-                </div>
-                
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_label}>Average Bet</div>
-                  <div className={styles.stat_value}>{stats.average_bet} 👑</div>
-                </div>
-                
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_label}>Current Streak</div>
-                  <div className={stats.current_streak > 0 ? styles.stat_value_success : stats.current_streak < 0 ? styles.stat_value_danger : styles.stat_value}>
-                    {stats.current_streak > 0 ? `${stats.current_streak} Wins 🔥` : stats.current_streak < 0 ? `${Math.abs(stats.current_streak)} Losses` : '0'}
+              </div>
+
+              {/* Financial Summary Section */}
+              <div className={styles.stats_section}>
+                <h3 className={styles.stats_section_title}>Financial Summary</h3>
+                <div className={styles.stats_grid}>
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Total Wagered</div>
+                    <div className={styles.stat_value}>{stats.total_wagered} 👑</div>
+                  </div>
+                  
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Total Profit/Loss</div>
+                    <div className={parseFloat(stats.total_profit) >= 0 ? styles.stat_value_success : styles.stat_value_danger}>
+                      {parseFloat(stats.total_profit) >= 0 ? '+' : ''}{stats.total_profit} 👑
+                    </div>
+                  </div>
+                  
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Average Bet</div>
+                    <div className={styles.stat_value}>{stats.average_bet} 👑</div>
+                  </div>
+                  
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Return on Investment</div>
+                    <div className={parseFloat(stats.total_profit) >= 0 ? styles.stat_value_success : styles.stat_value_danger}>
+                      {((parseFloat(stats.total_profit) / parseFloat(stats.total_wagered)) * 100).toFixed(1)}%
+                    </div>
                   </div>
                 </div>
-                
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_label}>Best Streak</div>
-                  <div className={styles.stat_value_success}>{stats.best_streak} Wins 🏆</div>
+              </div>
+
+              {/* Winning Streaks & Records Section */}
+              <div className={styles.stats_section}>
+                <h3 className={styles.stats_section_title}>Streaks & Records</h3>
+                <div className={styles.stats_grid}>
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Biggest Win</div>
+                    <div className={styles.stat_value_success}>{stats.biggest_win} 👑</div>
+                  </div>
+                  
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Best Streak</div>
+                    <div className={styles.stat_value_success}>{stats.best_streak} Wins 🏆</div>
+                  </div>
+
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Current Streak</div>
+                    <div className={stats.current_streak > 0 ? styles.stat_value_success : stats.current_streak < 0 ? styles.stat_value_danger : styles.stat_value}>
+                      {stats.current_streak > 0 ? `${stats.current_streak} Wins 🔥` : stats.current_streak < 0 ? `${Math.abs(stats.current_streak)} Losses` : 'Reset'}
+                    </div>
+                  </div>
+
+                  <div className={styles.stat_card}>
+                    <div className={styles.stat_label}>Loss Ratio</div>
+                    <div className={styles.stat_value_danger}>{stats.games_lost === 0 ? '0%' : ((stats.games_lost / stats.games_played) * 100).toFixed(1) + '%'}</div>
+                  </div>
                 </div>
               </div>
             </div>
