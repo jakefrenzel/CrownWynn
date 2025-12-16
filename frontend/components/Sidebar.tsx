@@ -50,6 +50,18 @@ export default function Sidebar() {
           <div className={styles.divider}></div>
 
           <div className={styles.section}>
+            <h3 className={styles.section_title}>Community</h3>
+            <div className={styles.game_list}>
+              <Link className={styles.game_card} href="/leaderboard" onClick={closeMenu}>
+                <div className={styles.game_icon}>🏆</div>
+                <div className={styles.game_name}>Leaderboard</div>
+              </Link>
+            </div>
+          </div>
+
+          <div className={styles.divider}></div>
+
+          <div className={styles.section}>
             <h3 className={styles.section_title}>Support</h3>
             <div className={styles.support_links}>
               <Link className={styles.support_link} href="#" onClick={closeMenu}>

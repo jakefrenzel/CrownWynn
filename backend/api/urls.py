@@ -25,6 +25,7 @@ from api.views import (
     KenoStatsView,
     RecentWinsView,
     MinesRecentWinsView,
+    LeaderboardView,
 )
 
 urlpatterns = [
@@ -61,4 +62,7 @@ urlpatterns = [
     path("keno/active/", ActiveKenoGameView.as_view(), name="keno-active"),
     path("keno/stats/", KenoStatsView.as_view(), name="keno-stats"),
     path("keno/recent-wins/", RecentWinsView.as_view(), name="recent-wins"),
+    
+    # Leaderboard endpoint
+    path("leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
 ]

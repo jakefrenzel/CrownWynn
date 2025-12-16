@@ -20,7 +20,8 @@ from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from api.serializers import ProfileSerializer
-from api.models import MinesGame, KenoGame
+from api.models import MinesGame, KenoGame, Profile
+from django.db import models
 from api.mines_utils import (
     generate_server_seed,
     generate_client_seed,
@@ -1202,6 +1203,126 @@ class MinesRecentWinsView(APIView):
             
             return Response({
                 'recent_wins': wins_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class LeaderboardView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        try:
+            from django.db.models import F, Max
+            from datetime import datetime, timedelta
+            
+            category = request.query_params.get('category', 'balance')
+            limit = int(request.query_params.get('limit', 50))
+            
+            # Get current month start
+            now = timezone.now()
+            month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            
+            # Base query - only users with some activity
+            profiles = Profile.objects.select_related('user').filter(
+                user__is_active=True
+            )
+            
+            leaderboard_data = []
+            
+            if category == 'balance':
+                # Current Balance leaderboard
+                profiles = profiles.order_by('-balance')[:limit]
+                
+                for rank, profile in enumerate(profiles, start=1):
+                    leaderboard_data.append({
+                        'rank': rank,
+                        'username': profile.user.username,
+                        'value': f"{float(profile.balance):.2f}",
+                        'display_value': f"{float(profile.balance):.2f} 👑"
+                    })
+                    
+            elif category == 'total_wagered':
+                # Total Wagered (current month for both games)
+                # Get games from current month for each user
+                profiles_data = []
+                
+                for profile in profiles:
+                    mines_wagered = MinesGame.objects.filter(
+                        user=profile.user,
+                        created_at__gte=month_start
+                    ).aggregate(total=models.Sum('bet_amount'))['total'] or Decimal('0')
+                    
+                    keno_wagered = KenoGame.objects.filter(
+                        user=profile.user,
+                        created_at__gte=month_start
+                    ).aggregate(total=models.Sum('bet_amount'))['total'] or Decimal('0')
+                    
+                    total_wagered = mines_wagered + keno_wagered
+                    
+                    if total_wagered > 0:
+                        profiles_data.append({
+                            'username': profile.user.username,
+                            'value': total_wagered
+                        })
+                
+                # Sort by value descending
+                profiles_data.sort(key=lambda x: x['value'], reverse=True)
+                profiles_data = profiles_data[:limit]
+                
+                for rank, data in enumerate(profiles_data, start=1):
+                    leaderboard_data.append({
+                        'rank': rank,
+                        'username': data['username'],
+                        'value': f"{float(data['value']):.2f}",
+                        'display_value': f"{float(data['value']):.2f} 👑"
+                    })
+                    
+            elif category == 'biggest_win':
+                # Biggest Single Win (current month from both games)
+                profiles_data = []
+                
+                for profile in profiles:
+                    mines_biggest = MinesGame.objects.filter(
+                        user=profile.user,
+                        status='won',
+                        created_at__gte=month_start
+                    ).aggregate(max_payout=Max('payout_amount'))['max_payout'] or Decimal('0')
+                    
+                    keno_biggest = KenoGame.objects.filter(
+                        user=profile.user,
+                        status='won',
+                        created_at__gte=month_start
+                    ).aggregate(max_payout=Max('payout_amount'))['max_payout'] or Decimal('0')
+                    
+                    biggest_win = max(mines_biggest, keno_biggest)
+                    
+                    if biggest_win > 0:
+                        profiles_data.append({
+                            'username': profile.user.username,
+                            'value': biggest_win
+                        })
+                
+                # Sort by value descending
+                profiles_data.sort(key=lambda x: x['value'], reverse=True)
+                profiles_data = profiles_data[:limit]
+                
+                for rank, data in enumerate(profiles_data, start=1):
+                    leaderboard_data.append({
+                        'rank': rank,
+                        'username': data['username'],
+                        'value': f"{float(data['value']):.2f}",
+                        'display_value': f"{float(data['value']):.2f} 👑"
+                    })
+            
+            return Response({
+                'leaderboard': leaderboard_data,
+                'category': category,
+                'period': 'monthly',
+                'period_start': month_start.isoformat()
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
