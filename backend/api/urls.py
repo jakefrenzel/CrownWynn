@@ -26,6 +26,7 @@ from api.views import (
     RecentWinsView,
     MinesRecentWinsView,
     LeaderboardView,
+    AdminAnalyticsView,
 )
 
 urlpatterns = [
@@ -65,4 +66,7 @@ urlpatterns = [
     
     # Leaderboard endpoint
     path("leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
+    
+    # Admin analytics endpoint
+    path("admin/analytics/", AdminAnalyticsView.as_view(), name="admin-analytics"),
 ]

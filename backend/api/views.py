@@ -1329,3 +1329,187 @@ class LeaderboardView(APIView):
             return Response({
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AdminAnalyticsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            # Check if user is admin (staff)
+            if not request.user.is_staff:
+                return Response({
+                    "error": "Admin access required"
+                }, status=status.HTTP_403_FORBIDDEN)
+            
+            from django.db.models import Sum, Count, Avg, Max, Q
+            from datetime import datetime, timedelta
+            
+            # Get date range from query params (default: all-time)
+            start_date_str = request.query_params.get('start_date', None)
+            end_date_str = request.query_params.get('end_date', None)
+            game_type = request.query_params.get('game', 'all')  # 'all', 'mines', 'keno'
+            
+            # Parse dates if provided
+            if start_date_str:
+                start_date = datetime.fromisoformat(start_date_str)
+            else:
+                start_date = None
+                
+            if end_date_str:
+                end_date = datetime.fromisoformat(end_date_str)
+            else:
+                end_date = timezone.now()
+            
+            # Build filters
+            mines_filter = Q()
+            keno_filter = Q()
+            
+            if start_date:
+                mines_filter &= Q(created_at__gte=start_date)
+                keno_filter &= Q(created_at__gte=start_date)
+            
+            if end_date:
+                mines_filter &= Q(created_at__lte=end_date)
+                keno_filter &= Q(created_at__lte=end_date)
+            
+            # Fetch games based on game_type
+            if game_type in ['all', 'mines']:
+                mines_games = MinesGame.objects.filter(mines_filter, status__in=['won', 'lost'])
+            else:
+                mines_games = MinesGame.objects.none()
+                
+            if game_type in ['all', 'keno']:
+                keno_games = KenoGame.objects.filter(keno_filter, status__in=['won', 'lost'])
+            else:
+                keno_games = KenoGame.objects.none()
+            
+            # Calculate metrics
+            mines_stats = mines_games.aggregate(
+                total_wagered=Sum('bet_amount'),
+                total_payouts=Sum('payout_amount'),
+                games_count=Count('id'),
+                games_won=Count('id', filter=Q(status='won')),
+                avg_bet=Avg('bet_amount'),
+                max_payout=Max('payout_amount')
+            )
+            
+            keno_stats = keno_games.aggregate(
+                total_wagered=Sum('bet_amount'),
+                total_payouts=Sum('payout_amount'),
+                games_count=Count('id'),
+                games_won=Count('id', filter=Q(status='won')),
+                avg_bet=Avg('bet_amount'),
+                max_payout=Max('payout_amount')
+            )
+            
+            # Calculate combined totals
+            total_wagered = Decimal('0')
+            total_payouts = Decimal('0')
+            total_games = 0
+            total_wins = 0
+            
+            if mines_stats['total_wagered']:
+                total_wagered += mines_stats['total_wagered']
+            if mines_stats['total_payouts']:
+                total_payouts += mines_stats['total_payouts']
+            if mines_stats['games_count']:
+                total_games += mines_stats['games_count']
+            if mines_stats['games_won']:
+                total_wins += mines_stats['games_won']
+                
+            if keno_stats['total_wagered']:
+                total_wagered += keno_stats['total_wagered']
+            if keno_stats['total_payouts']:
+                total_payouts += keno_stats['total_payouts']
+            if keno_stats['games_count']:
+                total_games += keno_stats['games_count']
+            if keno_stats['games_won']:
+                total_wins += keno_stats['games_won']
+            
+            # Calculate RTP (Return to Player)
+            rtp = 0.0
+            if total_wagered > 0:
+                rtp = float((total_payouts / total_wagered) * 100)
+            
+            # Calculate house edge profit
+            house_profit = total_wagered - total_payouts
+            
+            # Calculate win rate
+            win_rate = 0.0
+            if total_games > 0:
+                win_rate = float((total_wins / total_games) * 100)
+            
+            # Average session duration (approximation based on game count per user)
+            unique_players = User.objects.filter(
+                Q(mines_games__in=mines_games) | Q(keno_games__in=keno_games)
+            ).distinct().count() if total_games > 0 else 0
+            
+            # Get active players (by distinct users in time period)
+            if game_type in ['all', 'mines']:
+                active_players_mines = mines_games.values('user').distinct().count()
+            else:
+                active_players_mines = 0
+                
+            if game_type in ['all', 'keno']:
+                active_players_keno = keno_games.values('user').distinct().count()
+            else:
+                active_players_keno = 0
+            
+            active_players = max(active_players_mines, active_players_keno)
+            
+            # Game popularity
+            mines_popularity = mines_stats['games_count'] or 0
+            keno_popularity = keno_stats['games_count'] or 0
+            
+            return Response({
+                'summary': {
+                    'total_wagered': f"{float(total_wagered):.2f}",
+                    'total_payouts': f"{float(total_payouts):.2f}",
+                    'house_profit': f"{float(house_profit):.2f}",
+                    'total_games': total_games,
+                    'total_wins': total_wins,
+                    'active_players': active_players,
+                    'unique_players': unique_players,
+                },
+                'metrics': {
+                    'rtp': f"{rtp:.2f}",
+                    'house_edge': f"{100 - rtp:.2f}",
+                    'win_rate': f"{win_rate:.2f}",
+                    'avg_bet': f"{float(total_wagered / total_games if total_games > 0 else 0):.2f}",
+                },
+                'games': {
+                    'mines': {
+                        'games_played': mines_stats['games_count'] or 0,
+                        'games_won': mines_stats['games_won'] or 0,
+                        'total_wagered': f"{float(mines_stats['total_wagered'] or 0):.2f}",
+                        'total_payouts': f"{float(mines_stats['total_payouts'] or 0):.2f}",
+                        'avg_bet': f"{float(mines_stats['avg_bet'] or 0):.2f}",
+                        'max_payout': f"{float(mines_stats['max_payout'] or 0):.2f}",
+                        'win_rate': f"{(mines_stats['games_won'] / mines_stats['games_count'] * 100 if mines_stats['games_count'] else 0):.2f}",
+                    },
+                    'keno': {
+                        'games_played': keno_stats['games_count'] or 0,
+                        'games_won': keno_stats['games_won'] or 0,
+                        'total_wagered': f"{float(keno_stats['total_wagered'] or 0):.2f}",
+                        'total_payouts': f"{float(keno_stats['total_payouts'] or 0):.2f}",
+                        'avg_bet': f"{float(keno_stats['avg_bet'] or 0):.2f}",
+                        'max_payout': f"{float(keno_stats['max_payout'] or 0):.2f}",
+                        'win_rate': f"{(keno_stats['games_won'] / keno_stats['games_count'] * 100 if keno_stats['games_count'] else 0):.2f}",
+                    }
+                },
+                'popularity': {
+                    'mines': mines_popularity,
+                    'keno': keno_popularity,
+                    'most_popular': 'Mines' if mines_popularity >= keno_popularity else 'Keno' if keno_popularity > 0 else 'None'
+                },
+                'period': {
+                    'start_date': start_date.isoformat() if start_date else None,
+                    'end_date': end_date.isoformat()
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
