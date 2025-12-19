@@ -227,6 +227,15 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "api.authentication.CookieJWTAuthentication",
     ),
+    # Basic rate limiting (tunable via env if needed)
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": os.environ.get("THROTTLE_ANON", "200/hour"),
+        "user": os.environ.get("THROTTLE_USER", "1000/hour"),
+    },
 }
 
 SIMPLE_JWT = {
