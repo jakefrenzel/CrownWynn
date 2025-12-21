@@ -251,6 +251,67 @@ class ClaimDailyRewardView(APIView):
             "next_claim_at": profile.last_daily_claim
         }, status=status.HTTP_200_OK)
 
+class ClaimAdRewardView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        """Claim ad reward"""
+        profile = request.user.profile
+        
+        # Check if 5 minutes have passed since last claim
+        if profile.last_ad_claim:
+            time_since_claim = timezone.now() - profile.last_ad_claim
+            minutes_since_claim = time_since_claim.total_seconds() / 60
+            
+            if minutes_since_claim < 5:
+                time_remaining = int((5 * 60) - time_since_claim.total_seconds())
+                return Response(
+                    {
+                        "error": "Ad reward not available yet",
+                        "time_remaining": time_remaining
+                    }, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Use transaction to ensure atomicity
+        with transaction.atomic():
+            # Add the ad reward to balance
+            ad_amount = Decimal('100.00')
+            profile.balance += ad_amount
+            profile.last_ad_claim = timezone.now()
+            profile.save()
+        
+        return Response({
+            "message": "Ad reward claimed successfully!",
+            "reward_amount": ad_amount,
+            "new_balance": profile.balance,
+            "next_claim_at": profile.last_ad_claim
+        }, status=status.HTTP_200_OK)
+
+class CheckAdRewardView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Check if user can claim ad reward"""
+        profile = request.user.profile
+        
+        can_claim = True
+        time_remaining = 0
+        
+        if profile.last_ad_claim:
+            time_since_claim = timezone.now() - profile.last_ad_claim
+            minutes_since_claim = time_since_claim.total_seconds() / 60
+            
+            if minutes_since_claim < 5:
+                can_claim = False
+                time_remaining = int((5 * 60) - time_since_claim.total_seconds())
+        
+        return Response({
+            "can_claim": can_claim,
+            "time_remaining": time_remaining,
+            "last_claim": profile.last_ad_claim,
+        }, status=status.HTTP_200_OK)
+
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
     

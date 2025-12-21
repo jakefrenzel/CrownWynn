@@ -8,6 +8,7 @@ class Profile(models.Model):
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     welcome_bonus_claimed = models.BooleanField(default=False)
     last_daily_claim = models.DateTimeField(null=True, blank=True)  # Last time user claimed daily reward
+    last_ad_claim = models.DateTimeField(null=True, blank=True)  # Last time user claimed ad reward (5 min cooldown)
     mines_nonce = models.IntegerField(default=0)  # Nonce counter for provably fair mines games (always increments)
     current_client_seed = models.CharField(max_length=64, blank=True, null=True)  # Current client seed for provably fair
     seed_games_played = models.IntegerField(default=0)  # Number of games played on current seed
