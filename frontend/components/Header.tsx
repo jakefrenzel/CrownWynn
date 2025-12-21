@@ -6,6 +6,7 @@ import { useUI } from "@/context/UIContext";
 import { useUser, formatBalanceDisplay } from "@/context/UserContext";
 import Link from "next/link";
 import { checkDailyReward, claimDailyReward } from '@/lib/dailyRewardApi';
+import { checkAdReward, claimAdReward } from '@/lib/adRewardApi';
 
 interface HeaderProps {
     onStatsClick?: () => void;
@@ -20,6 +21,13 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
     const [showDailyModal, setShowDailyModal] = useState(false);
     const [dailyMessage, setDailyMessage] = useState('');
     const [isClaiming, setIsClaiming] = useState(false);
+    
+    // Ad reward states
+    const [canClaimAd, setCanClaimAd] = useState(false);
+    const [adTimeRemaining, setAdTimeRemaining] = useState(0);
+    const [showAdModal, setShowAdModal] = useState(false);
+    const [adMessage, setAdMessage] = useState('');
+    const [isClaimingAd, setIsClaimingAd] = useState(false);
 
     const handleLogout = async () => {
         await logout();
@@ -70,6 +78,23 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
     }, [user]);
 
     useEffect(() => {
+        const checkAd = async () => {
+            if (!user) return;
+            try {
+                const status = await checkAdReward();
+                setCanClaimAd(status.can_claim);
+                setAdTimeRemaining(status.time_remaining);
+            } catch (err) {
+                console.warn('Ad reward check failed', err);
+            }
+        };
+
+        checkAd();
+        const interval = setInterval(checkAd, 60000); // Check every minute
+        return () => clearInterval(interval);
+    }, [user]);
+
+    useEffect(() => {
         if (timeRemaining <= 0) return;
         const timer = setInterval(() => {
             setTimeRemaining(prev => {
@@ -82,6 +107,20 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
         }, 1000);
         return () => clearInterval(timer);
     }, [timeRemaining]);
+
+    useEffect(() => {
+        if (adTimeRemaining <= 0) return;
+        const timer = setInterval(() => {
+            setAdTimeRemaining(prev => {
+                if (prev <= 1) {
+                    setCanClaimAd(true);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [adTimeRemaining]);
 
     const handleClaimDaily = async () => {
         setIsClaiming(true);
@@ -99,6 +138,22 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
             setIsClaiming(false);
         }
     };
+
+    const handleClaimAd = async () => {
+        setIsClaimingAd(true);
+        try {
+            const response = await claimAdReward();
+            setAdMessage(response.message);
+            setShowAdModal(true);
+            setCanClaimAd(false);
+            setAdTimeRemaining(5 * 60); // 5 minutes
+            setBalance(parseFloat(response.new_balance));
+        } catch (err: any) {
+            setAdMessage(err.response?.data?.error || 'Failed to claim ad reward');
+            setShowAdModal(true);
+        } finally {
+            setIsClaimingAd(false);
+        }
 
     const formatTimeRemaining = (seconds: number): string => {
         const hours = Math.floor(seconds / 3600);
@@ -139,6 +194,23 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
             <div className={`${styles.header_segments} ${styles.header_button_container}`}>
                 {user ? (
                     <>
+                        <button 
+                            onClick={handleClaimAd} 
+                            className={styles.header_button}
+                            disabled={!canClaimAd || isClaimingAd}
+                            style={{
+                                opacity: (canClaimAd && !isClaimingAd) ? 1 : 0.6,
+                                cursor: (canClaimAd && !isClaimingAd) ? 'pointer' : 'not-allowed',
+                                position: 'relative'
+                            }}
+                        >
+                            {isClaimingAd ? (
+                                <svg className={styles.daily_spinner} width="16" height="16" viewBox="0 0 50 50">
+                                    <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="4"></circle>
+                                    <path d="M45 25a20 20 0 0 1-20 20" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round"></path>
+                                </svg>
+                            ) : canClaimAd ? 'Ad' : formatTimeRemaining(adTimeRemaining)}
+                        </button>
                         <button 
                             onClick={handleClaimDaily} 
                             className={styles.header_button}
@@ -182,6 +254,20 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
                         </div>
                         <div className={styles.modal_body}>
                             <p>{dailyMessage}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showAdModal && (
+                <div className={styles.modal_overlay} onClick={() => setShowAdModal(false)}>
+                    <div className={styles.modal_content} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modal_header}>
+                            <h2>Ad Reward</h2>
+                            <button className={styles.modal_close} onClick={() => setShowAdModal(false)}>✕</button>
+                        </div>
+                        <div className={styles.modal_body}>
+                            <p>{adMessage}</p>
                         </div>
                     </div>
                 </div>
