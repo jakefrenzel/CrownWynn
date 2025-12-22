@@ -13,6 +13,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onStatsClick }: HeaderProps = {}) {
+    // Ad reward functionality added
     const { user, balance, setBalance, logout } = useUser(); // ✅ get logout from context
     const [loading, setLoading] = useState(true);    // ✅ local loading only
     const { toggleMenu } = useUI();
@@ -154,6 +155,7 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
         } finally {
             setIsClaimingAd(false);
         }
+    };
 
     const formatTimeRemaining = (seconds: number): string => {
         const hours = Math.floor(seconds / 3600);
