@@ -7,6 +7,7 @@ import { useUser, formatBalanceDisplay } from "@/context/UserContext";
 import Link from "next/link";
 import { checkDailyReward, claimDailyReward } from '@/lib/dailyRewardApi';
 import { checkAdReward, claimAdReward } from '@/lib/adRewardApi';
+import { loadAdMobScript, showRewardedAd } from '@/lib/adMobService';
 
 interface HeaderProps {
     onStatsClick?: () => void;
@@ -29,10 +30,15 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
     const [showAdModal, setShowAdModal] = useState(false);
     const [adMessage, setAdMessage] = useState('');
     const [isClaimingAd, setIsClaimingAd] = useState(false);
+    const [adCountdown, setAdCountdown] = useState(0);
 
     const handleLogout = async () => {
         await logout();
     };
+
+    useEffect(() => {
+        loadAdMobScript();
+    }, []);
 
 
 
@@ -123,6 +129,14 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
         return () => clearInterval(timer);
     }, [adTimeRemaining]);
 
+    useEffect(() => {
+        if (adCountdown <= 0) return;
+        const timer = setInterval(() => {
+            setAdCountdown(prev => prev - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [adCountdown]);
+
     const handleClaimDaily = async () => {
         setIsClaiming(true);
         try {
@@ -142,16 +156,30 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
 
     const handleClaimAd = async () => {
         setIsClaimingAd(true);
+        setShowAdModal(true);
+        setAdCountdown(5); // Fallback countdown
+        
         try {
+            // Try to show real AdMob ad
+            const adShown = await showRewardedAd();
+            
+            // If real ad didn't show, use countdown fallback
+            if (!adShown) {
+                console.log('AdMob not available, using countdown fallback');
+                // Wait for countdown to finish
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+            
+            // Claim the reward
             const response = await claimAdReward();
             setAdMessage(response.message);
-            setShowAdModal(true);
             setCanClaimAd(false);
             setAdTimeRemaining(5 * 60); // 5 minutes
             setBalance(parseFloat(response.new_balance));
+            setAdCountdown(0);
         } catch (err: any) {
             setAdMessage(err.response?.data?.error || 'Failed to claim ad reward');
-            setShowAdModal(true);
+            setAdCountdown(0);
         } finally {
             setIsClaimingAd(false);
         }
@@ -262,15 +290,26 @@ export default function Header({ onStatsClick }: HeaderProps = {}) {
             )}
 
             {showAdModal && (
-                <div className={styles.modal_overlay} onClick={() => setShowAdModal(false)}>
+                <div className={styles.modal_overlay}>
                     <div className={styles.modal_content} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.modal_header}>
-                            <h2>Ad Reward</h2>
-                            <button className={styles.modal_close} onClick={() => setShowAdModal(false)}>✕</button>
-                        </div>
-                        <div className={styles.modal_body}>
-                            <p>{adMessage}</p>
-                        </div>
+                        {adCountdown > 0 ? (
+                            <div className={styles.ad_video_container}>
+                                <div className={styles.ad_placeholder}>
+                                    <p>Advertisement</p>
+                                    <div className={styles.ad_countdown}>{adCountdown}s</div>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className={styles.modal_header}>
+                                    <h2>Ad Reward</h2>
+                                    <button className={styles.modal_close} onClick={() => setShowAdModal(false)}>✕</button>
+                                </div>
+                                <div className={styles.modal_body}>
+                                    <p>{adMessage}</p>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
