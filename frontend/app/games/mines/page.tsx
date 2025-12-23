@@ -21,11 +21,13 @@ import {
   type MinesRecentWinItem,
 } from '@/lib/minesApi';
 import { verify_game } from '@/lib/minesVerification';
+import { validateBetAmount, sanitizeBetInput, formatBetDisplay } from '@/lib/betValidation';
 
 export default function MinesPage() {
-  const { user, loading, setBalance } = useUser();
+  const { user, loading, setBalance, balance } = useUser();
   const router = useRouter();
   const [betAmount, setBetAmount] = useState<string>('0.00');
+  const [betError, setBetError] = useState<string>('');
   const [minesCount, setMinesCount] = useState<number>(3);
   const [isGameActive, setIsGameActive] = useState<boolean>(false);
   const [multiplier, setMultiplier] = useState<number>(1.00);
@@ -61,16 +63,32 @@ export default function MinesPage() {
 
   const handleHalfBet = () => {
     const current = parseFloat(betAmount) || 0;
-    setBetAmount((current / 2).toFixed(2));
+    const newBet = (current / 2).toFixed(2);
+    setBetAmount(newBet);
+    validateAndSetBet(newBet);
   };
 
   const handleDoubleBet = () => {
     const current = parseFloat(betAmount) || 0;
-    setBetAmount((current * 2).toFixed(2));
+    const newBet = (current * 2).toFixed(2);
+    setBetAmount(newBet);
+    validateAndSetBet(newBet);
+  };
+
+  const validateAndSetBet = (bet: string) => {
+    if (!user) return;
+    const validation = validateBetAmount(bet, balance);
+    setBetError(validation.error || '');
   };
 
   const handleStartGame = async () => {
     try {
+      // Validate bet before submitting
+      const validation = validateBetAmount(betAmount, balance);
+      if (!validation.isValid) {
+        setBetError(validation.error || 'Invalid bet amount');
+        return;
+      }
       setErrorMessage('');
       setIsStarting(true);
       const bet = parseFloat(betAmount);
@@ -411,14 +429,22 @@ export default function MinesPage() {
             <div className={styles.input_row}>
               <div className={styles.input_container}>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   id="bet-amount"
-                  className={styles.bet_input_field}
+                  className={`${styles.bet_input_field} ${betError ? styles.input_error : ''}`}
                   placeholder="0.00"
                   value={betAmount}
-                  onChange={(e) => setBetAmount(e.target.value)}
-                  min="0"
-                  step="0.01"
+                  onChange={(e) => {
+                    const sanitized = sanitizeBetInput(e.target.value);
+                    setBetAmount(sanitized);
+                    if (sanitized && user) {
+                      const validation = validateBetAmount(sanitized, balance);
+                      setBetError(validation.error || '');
+                    } else {
+                      setBetError('');
+                    }
+                  }}
                   disabled={isGameActive}
                 />
                 <Image
@@ -429,6 +455,7 @@ export default function MinesPage() {
                   className={styles.input_gemstone_image}
                 />
               </div>
+              {betError && <div className={styles.error_message}>{betError}</div>}
               <button 
                 className={styles.quick_bet_button} 
                 onClick={handleHalfBet}
@@ -466,7 +493,7 @@ export default function MinesPage() {
               <button 
               className={`${styles.bet_section_button} ${styles.play_button_green}`}
               onClick={handlePlayClick}
-              disabled={(isGameActive && revealedTiles.length === 0) || isStarting || isRevealing || isCashingOut}
+              disabled={(isGameActive && revealedTiles.length === 0) || isStarting || isRevealing || isCashingOut || !!betError}
               aria-busy={isStarting || isRevealing || isCashingOut}
             >
               {(isStarting || isAnimating) ? (

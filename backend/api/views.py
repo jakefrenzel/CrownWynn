@@ -18,6 +18,8 @@ import os
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from api.models import User, Profile, MinesGame, KenoGame
+from api.validators import BetValidator
 
 from api.serializers import ProfileSerializer
 from api.models import MinesGame, KenoGame, Profile
@@ -360,19 +362,22 @@ class StartMinesGameView(APIView):
             mines_count = request.data.get('mines_count')
             client_seed = request.data.get('client_seed')  # Optional - player can provide their own
             
-            # Validate inputs
-            if not bet_amount or not mines_count:
+            # Validate bet amount
+            is_valid, error, validated_bet = BetValidator.validate_bet_amount(
+                bet_amount, 
+                request.user.profile.balance
+            )
+            if not is_valid:
                 return Response({
-                    "error": "bet_amount and mines_count are required"
+                    "error": error
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            bet_amount = float(bet_amount)
+            if not mines_count:
+                return Response({
+                    "error": "mines_count is required"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
             mines_count = int(mines_count)
-            
-            if bet_amount <= 0:
-                return Response({
-                    "error": "Bet amount must be positive"
-                }, status=status.HTTP_400_BAD_REQUEST)
             
             if mines_count < 1 or mines_count > 24:
                 return Response({
@@ -399,8 +404,7 @@ class StartMinesGameView(APIView):
             # Deduct bet from balance
             with transaction.atomic():
                 profile = request.user.profile
-                from decimal import Decimal
-                profile.balance -= Decimal(str(bet_amount))
+                profile.balance -= validated_bet
                 
                 # Get current nonce and increment it (always increments)
                 current_nonce = profile.mines_nonce
@@ -917,22 +921,24 @@ class StartKenoGameView(APIView):
             numbers_selected = request.data.get('numbers_selected')
             client_seed = request.data.get('client_seed')  # Optional - player can provide their own
             
-            # Validate inputs
-            if not bet_amount or not numbers_selected:
+            # Validate bet amount
+            is_valid, error, validated_bet = BetValidator.validate_bet_amount(
+                bet_amount,
+                request.user.profile.balance
+            )
+            if not is_valid:
                 return Response({
-                    "error": "bet_amount and numbers_selected are required"
+                    "error": error
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            bet_amount = float(bet_amount)
+            if not numbers_selected:
+                return Response({
+                    "error": "numbers_selected is required"
+                }, status=status.HTTP_400_BAD_REQUEST)
             
             if not isinstance(numbers_selected, list):
                 return Response({
                     "error": "numbers_selected must be a list"
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            if bet_amount <= 0:
-                return Response({
-                    "error": "Bet amount must be positive"
                 }, status=status.HTTP_400_BAD_REQUEST)
             
             # Validate numbers selected
@@ -972,8 +978,7 @@ class StartKenoGameView(APIView):
             # Deduct bet from balance and create game
             with transaction.atomic():
                 profile = request.user.profile
-                from decimal import Decimal
-                profile.balance -= Decimal(str(bet_amount))
+                profile.balance -= validated_bet
                 
                 # Get current nonce and increment it
                 current_nonce = profile.mines_nonce  # Using same nonce counter as mines

@@ -18,6 +18,7 @@ import {
 } from '@/lib/kenoApi';
 import api from '@/lib/axiosInstance';
 import { verify_keno_game } from '@/lib/kenoVerification';
+import { validateBetAmount, sanitizeBetInput, formatBetDisplay } from '@/lib/betValidation';
 import { getSeedInfo, rerollSeed } from '@/lib/minesApi';
 
 export default function KenoPage() {
@@ -35,9 +36,10 @@ export default function KenoPage() {
       10: {0: 0.00, 1: 0.00, 2: 0.00, 3: 1.60, 4: 2.00, 5: 4.00, 6: 7.00, 7: 26.00, 8: 100.00, 9: 500.00, 10: 1000.00}
     };
 
-  const { user, loading, setBalance } = useUser();
+  const { user, loading, setBalance, balance } = useUser();
   const router = useRouter();
   const [betAmount, setBetAmount] = useState<string>('0.00');
+  const [betError, setBetError] = useState<string>('');
   const [spotsToSelect, setSpotsToSelect] = useState<number>(10);
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
   const [drawnNumbers, setDrawnNumbers] = useState<number[]>([]);
@@ -102,14 +104,25 @@ export default function KenoPage() {
     setNetGain(displayWin.toFixed(2));
   }, [currentDrawIndex, isAnimating, betAmount, selectedNumbers, drawnNumbers, payoutTable]);
 
+  const validateAndSetBet = (bet: string) => {
+    if (user) {
+      const validation = validateBetAmount(bet, balance);
+      setBetError(validation.error || '');
+    }
+  };
+
   const handleHalfBet = () => {
     const current = parseFloat(betAmount) || 0;
-    setBetAmount((current / 2).toFixed(2));
+    const newBet = (current / 2).toFixed(2);
+    setBetAmount(newBet);
+    validateAndSetBet(newBet);
   };
 
   const handleDoubleBet = () => {
     const current = parseFloat(betAmount) || 0;
-    setBetAmount((current * 2).toFixed(2));
+    const newBet = (current * 2).toFixed(2);
+    setBetAmount(newBet);
+    validateAndSetBet(newBet);
   };
 
   const handleNumberClick = (number: number) => {
@@ -138,13 +151,22 @@ export default function KenoPage() {
     try {
       setErrorMessage('');
       setIsStarting(true);
-      const bet = parseFloat(betAmount);
       
-      if (isNaN(bet) || bet <= 0) {
-        setErrorMessage('Please enter a valid bet amount');
+      // Validate bet
+      if (!user) {
+        setErrorMessage('User not loaded');
         setIsStarting(false);
         return;
       }
+
+      const validation = validateBetAmount(betAmount, balance);
+      if (!validation.isValid) {
+        setErrorMessage(validation.error || 'Invalid bet amount');
+        setIsStarting(false);
+        return;
+      }
+
+      const bet = validation.value || 0;
 
       if (selectedNumbers.length === 0) {
         setErrorMessage('Please select at least 1 number');
@@ -460,14 +482,22 @@ export default function KenoPage() {
             <div className={styles.input_row}>
               <div className={styles.input_container}>
                 <input
-                  type="number"
+                  type="text"
                   id="bet-amount"
-                  className={styles.bet_input_field}
+                  className={`${styles.bet_input_field} ${betError ? styles.input_error : ''}`}
                   placeholder="0.00"
                   value={betAmount}
-                  onChange={(e) => setBetAmount(e.target.value)}
-                  min="0"
-                  step="0.01"
+                  inputMode="decimal"
+                  onChange={(e) => {
+                    const sanitized = sanitizeBetInput(e.target.value);
+                    setBetAmount(sanitized);
+                    if (sanitized && user) {
+                      const validation = validateBetAmount(sanitized, balance);
+                      setBetError(validation.error || '');
+                    } else {
+                      setBetError('');
+                    }
+                  }}
                   disabled={isGameActive}
                 />
                 <Image
@@ -493,6 +523,11 @@ export default function KenoPage() {
                 2×
               </button>
             </div>
+            {betError && (
+              <div className={styles.error_message}>
+                {betError}
+              </div>
+            )}
             <div className={styles.label_container}>
               <div className={`${styles.label} ${styles.game_label}`}>Selected Numbers</div>
             </div>
@@ -550,7 +585,7 @@ export default function KenoPage() {
             <button 
               className={`${styles.bet_section_button} ${styles.play_button_green}`}
               onClick={handleStartGame}
-              disabled={isGameActive || isAnimating || isStarting || selectedNumbers.length === 0}
+              disabled={isGameActive || isAnimating || isStarting || selectedNumbers.length === 0 || !!betError}
               aria-busy={isStarting || isAnimating}
             >
               {(isStarting || isAnimating) ? (

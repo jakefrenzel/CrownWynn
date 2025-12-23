@@ -1240,3 +1240,28 @@
     margin-bottom: 8px;
     color: #b1bad3;
 }
+
+.input_error {
+    border-color: #ff4444 !important;
+    background-color: rgba(255, 68, 68, 0.05) !important;
+}
+
+.error_message {
+    font-size: 0.85rem;
+    color: #ff4444;
+    margin-top: 8px;
+    text-align: center;
+    font-weight: 500;
+    animation: slideInError 0.2s ease-out;
+}
+
+@keyframes slideInError {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
